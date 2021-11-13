@@ -4,8 +4,9 @@ import user from "./user.json";
 const url = "https://jsonplaceholder.typicode.com";
 
 type USER = typeof user;
+
 // const options: AxiosRequestConfig = {
-const options = {
+const options: AxiosRequestConfig = {
   url: `${url}/users`,
   method: "GET",
 };
@@ -20,7 +21,7 @@ const getUsersInfo = async (): Promise<USER[]> => {
 
   return data;
 };
-type errorRes = { error: string };
+
 const AxiosResReqType: React.FC = () => {
   const [users, setUsers] = useState<USER[]>([]);
   const [status, setStatus] = useState<number | null>(null);
@@ -38,8 +39,9 @@ const AxiosResReqType: React.FC = () => {
         setUsers(data);
         setStatus(status);
       })
-      .catch((e: AxiosError<errorRes>) => {
+      .catch((e: AxiosError<{ error: string }>) => {
         // エラー処理
+        console.log(e.message);
       });
 
     axios(options).then(

@@ -30,3 +30,12 @@ $ npx zenn new:article --slug what-is-slug
 ```sh
 npx zenn new:article --slug 記事のスラッグ --title タイトル --type idea --emoji ✨
 ```
+
+## 画像の挿入方法
+
+参考：https://zenn.dev/zenn/articles/deploy-github-images
+`zenn-connect/images`の下に画像を置く
+
+- 画像の指定方法
+  ![](/images/USER_type.png)
+  絶対パスで行う。
