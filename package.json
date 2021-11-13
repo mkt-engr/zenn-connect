@@ -1,0 +1,25 @@
+{
+  "name": "zenn-connect",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mkt-engr/zenn-connect.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mkt-engr/zenn-connect/issues"
+  },
+  "homepage": "https://github.com/mkt-engr/zenn-connect#readme",
+  "dependencies": {
+    "axios": "^0.24.0",
+    "react-router-dom": "^6.0.2",
+    "zenn-cli": "^0.1.98"
+  }
+}
