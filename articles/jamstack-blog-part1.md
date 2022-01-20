@@ -21,9 +21,26 @@ published: false
 - Google Analytics 連携
 - 独自ドメイン
 
+## やってないこと
+
+ここでやってないことをつらつらと書き並べます。
+
+- Prettier
+- Linter
+- ダークモード
+- 検索機能
+- ページネーション
+- コメント機能
+- 僕の SNS へのリンク
+- PWA
+
+特に上 2 つは追加しないとダメですね。今後記事書きます！
+
 # 主なライブラリのバージョン
 
 作成したブログに用いた主なライブラリのバージョンはこちらです。
+
+<!-- TODO:表にする -->
 
 - Next : 12.0.4
 - React : 17.0.2
@@ -69,13 +86,62 @@ npm run dev # tsconfig.jsonに書き込まれる。
 
 ### Tailwind CSS の導入
 
-## 記事一覧ページ
+[公式サイト](https://v2.tailwindcss.com/docs/guides/nextjs)に手順があるのでそれを引用します。
+
+1. Tailwind CSS のインストール
+
+```sh
+npm install -D tailwindcss@latest postcss@latest autoprefixer@latest
+npx tailwindcss init -p
+```
+
+2 つ目のコマンドでルート直下に tailwind.config.js と postcss.config.js がつくられます。
+
+2. tailwind.config.js の編集
+   `purge`オプションで
+   - どのディレクトリに置いた
+   - どの拡張子のものに
+
+Tailwind CSS を適用させるかを記述します。また実装で使われることがなかった Tailwind CSS のクラスは実装の時にビルドされなくなります。
+
+```js
+module.exports = {
+  purge: ["./pages/**/*.{js,ts,jsx,tsx}", "./components/**/*.{js,ts,jsx,tsx}"],
+  darkMode: false, // or 'media' or 'class'
+  theme: {
+    extend: {
+      fontFamily: {
+        rock: ["Rock Salt"],
+      },
+    },
+  },
+  variants: {
+    translate: ["hover"], //ここは不要
+    //TODO:デフォルトはhttps://v2.tailwindcss.com/docs/configuring-variants#default-variants-reference
+  },
+  plugins: [],
+};
+```
+
+これでセットアップは完了です。
+
+## Google Analytics と Favicon の設定(`_document.tsx`)
+
+Google Analytics と Favicon は Head タグに書く必要があるのでここに書きます。
+
+## Google Analytics をページ遷移時にも対応させる(`_app.tsx`)
+
+## ブログサイト全体のレイアウトを決める (`Layout.tsx`)
+
+## 記事一覧ページ(`pages/index.tsx`)
 
 NextPage 型は
 
 > `Page` type, use it as a guide to create `pages`.
 
 だそうです。pages ディレクトリ下で使うファイルだということを明示するために使う型のようです。VFC を使ってもエラーは出なかったのでどちらでも問題はないのかなと思います。。ちゃんとした意味があった場合は教えてください笑
+
+## 記事詳細ページ(`pages/index.tsx`)
 
 ## 作った機能その３
 
