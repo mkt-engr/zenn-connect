@@ -294,6 +294,34 @@ export default Favicon;
 
 ## Google Analytics をページ遷移時にも対応させる(`_app.tsx`)
 
+これも Vercel の(サンプル)[https://github.com/vercel/next.js/blob/canary/examples/with-google-analytics/pages/_app.js]にあります。
+
+```ts:_app.tsx
+import { useEffect } from "react";
+import { useRouter } from "next/router";
+import { AppProps } from "next/app";
+import * as gtag from "../lib/gtag";
+import "../styles/globals.scss";
+
+const MyApp = ({ Component, pageProps }: AppProps) => {
+  // Google Analyticsをページ遷移時にも対応させる
+  const router = useRouter();
+  useEffect(() => {
+    const handleRouteChange = (url: string) => {
+      gtag.pageview(url);
+    };
+    router.events.on("routeChangeComplete", handleRouteChange);
+    return () => {
+      router.events.off("routeChangeComplete", handleRouteChange);
+    };
+  }, [router.events]);
+  return <Component {...pageProps} />;
+};
+
+export default MyApp;
+
+```
+
 ## ブログサイト全体のレイアウトを決める (`Layout.tsx`)
 
 ## 記事一覧ページ(`pages/index.tsx`)
