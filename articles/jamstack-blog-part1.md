@@ -115,10 +115,7 @@ module.exports = {
       },
     },
   },
-  variants: {
-    translate: ["hover"], //ここは不要
-    //TODO:デフォルトはhttps://v2.tailwindcss.com/docs/configuring-variants#default-variants-reference
-  },
+  variants: {},
   plugins: [],
 };
 ```
@@ -128,6 +125,172 @@ module.exports = {
 ## Google Analytics と Favicon の設定(`_document.tsx`)
 
 Google Analytics と Favicon は Head タグに書く必要があるのでここに書きます。
+
+### `_document.tsx`
+
+Google Analytics とファビコンに関する記述はコンポーネント化しているので`_document.tsx`ではおれを読み込んでいるだけです。
+
+```ts:_document.tsx
+import NextDocument, { Html, Head, Main, NextScript } from "next/document";
+import Favicon from "../components/Favicons";
+import GA from "../components/GA";
+
+type Props = {};
+class Document extends NextDocument<Props> {
+  render() {
+    return (
+      <Html lang="ja">
+        <Head>
+          {/*Google Analyticsのコンポーネント*/}
+          <GA />
+          {/*ファビコン関連のコンポーネント*/}
+          <Favicon />
+        </Head>
+        <body className="leading-relaxed box-content">
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    );
+  }
+}
+
+export default Document;
+```
+
+### Google Analytics のイベントを発火させる関数(`gtag.ts`)
+
+`_document.tsx`にあった`GA`コンポーネントで使う関数を作ります。型を使いたいのでまず最初に型情報を import します。
+
+```sh
+npm i @types/gtag.js
+```
+
+Vercel のリポジトリに[サンプル](https://github.com/vercel/next.js/blob/canary/examples/with-google-analytics/lib/gtag.js)があったのでそのまま使います。
+
+```ts:gtag.ts
+export const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID || "";
+
+//参考： https://developers.google.com/analytics/devguides/collection/gtagjs/pages
+export const pageview = (url: string): void => {
+  if (!GA_TRACKING_ID) return;
+  window.gtag("config", GA_TRACKING_ID, {
+    page_path: url,
+  });
+};
+
+//参考： https://developers.google.com/analytics/devguides/collection/gtagjs/events
+type GaEventProps = {
+  action: string;
+  category: string;
+  label: string;
+  value?: number;
+};
+
+export const event = ({
+  action,
+  category,
+  label,
+  value,
+}: GaEventProps): void => {
+  if (!GA_TRACKING_ID) return;
+  window.gtag("event", action, {
+    event_category: category,
+    event_label: label,
+    value,
+  });
+};
+```
+
+型を import したのは`window.gtag`を使うためです。
+
+### Google Analytics
+
+[こちら](https://github.com/vercel/next.js/blob/canary/examples/with-google-analytics/pages/_app.js)に Vercel が作成したサンプルコードの中に GA を組み込んだ物があったのでそれを採用します。
+
+```ts:GA.tsx
+import { VFC } from "react";
+import { GA_TRACKING_ID } from "../lib/gtag";
+import Script from "next/script";
+const GA: VFC = () => {
+  return (
+    <>
+      {GA_TRACKING_ID && (
+        <>
+          <Script
+            strategy="afterInteractive"
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`}
+          />
+          <Script
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_TRACKING_ID}', {
+                  page_path: window.location.pathname,
+                });`,
+            }}
+          />
+        </>
+      )}
+    </>
+  );
+};
+
+export default GA;
+```
+
+`Script`タグ(デフォルトで用意してある頭文字が小文字の script ではない)には`strategy`と呼ばれる属性を設定することができます。この属性には 3 つのオプションがあります。それぞれ
+
+- `beforeInteractive`：ページが操作可能になる前に src 属性に書かれたスクリプトをロードする
+- `afterInteractive`：ページが操作可能になった直後 src 属性に書かれたスクリプトをロードする
+- `lazyOnload`：ページが操作可能になってアイドル状態になった後に src 属性に書かれたスクリプトをロードする
+
+詳しくは[Next の公式ページ](https://nextjs.org/docs/basic-features/script) や[こちらの記事](https://zenn.dev/aiji42/articles/9a6ab12ab5f6e6)のページをご覧ください。
+
+### Favicon
+
+[こちら](https://qiita.com/purpleeeee/items/cd9aca1ae735ad678355) の記事で紹介されている Favicon Generator というサイトを使ってファビコンの生成を行いました。こちらのサイトに画像をアップロードすると、デスクトップ用、モバイル用などのファビコンが生成されます。
+
+```ts:Favicons.tsx
+import { VFC } from "react";
+
+const Favicon: VFC = () => {
+  return (
+    <>
+      <link
+        rel="apple-touch-icon"
+        sizes="180x180"
+        href="/favicons/apple-touch-icon.png"
+      />
+      <link
+        rel="icon"
+        type="image/png"
+        sizes="32x32"
+        href="/favicons/favicon-32x32.png"
+      />
+      <link
+        rel="icon"
+        type="image/png"
+        sizes="16x16"
+        href="/favicons/favicon-16x16.png"
+      />
+      <link rel="manifest" href="/favicons/site.webmanifest" />
+      <link
+        rel="mask-icon"
+        href="/favicons/safari-pinned-tab.svg"
+        color="#5bbad5"
+      />
+      <meta name="msapplication-TileColor" content="##3B1EEc" />
+      <meta name="theme-color" content="#ffffff" />
+    </>
+  );
+};
+
+export default Favicon;
+```
 
 ## Google Analytics をページ遷移時にも対応させる(`_app.tsx`)
 
