@@ -59,7 +59,7 @@ npx create-next-app jamstack-blog
 
 いつの間にかデフォルトで yarn ではなく npm になってました。このコマンドでオプションで`--ts`をつけていれば TypeScript が導入できたのですがうっかりオプションをつけるのを忘れていました。
 
-[こちら](https://maku.blog/p/ny9fmty/)のサイトに既存のプロジェクトに TypeScript を導入する方法が記載してありました。
+[こちら](https://maku.blog/p/ny9fmty/)のサイトに従って既存のプロジェクトに TypeScript を導入します。
 
 ```sh
 touch tsconfig.json # プロジェクトのルートでtsconfig.jsonを作成
@@ -85,7 +85,7 @@ npm run dev # tsconfig.jsonに書き込まれる。
 
 ### Tailwind CSS の導入
 
-[公式サイト](https://v2.tailwindcss.com/docs/guides/nextjs)に手順があるのでそれを引用します。
+[公式サイト](https://v2.tailwindcss.com/docs/guides/nextjs)の手順に従って Tailwind CSS を導入します。
 
 1. Tailwind CSS のインストール
 
@@ -788,3 +788,20 @@ export const highlightByHighlightJs = (content: string) => {
 :::
 
 # まとめ
+
+# 参考文献
+
+- https://maku.blog/p/ny9fmty/
+- https://v2.tailwindcss.com/docs/guides/nextjs
+- https://github.com/vercel/next.js/blob/canary/examples/with-google-analytics/lib/gtag.js
+- https://github.com/vercel/next.js/blob/canary/examples/with-google-analytics/pages/_app.js
+- https://nextjs.org/docs/basic-features/script
+- https://zenn.dev/aiji42/articles/9a6ab12ab5f6e6
+- https://qiita.com/purpleeeee/items/cd9aca1ae735ad678355
+- https://github.com/vercel/next.js/blob/canary/examples/with-google-analytics/pages/_app.js
+- https://blog.microcms.io/syntax-highlighting-on-server-side/
+- https://nextjs.org/docs/basic-features/environment-variables
+- https://nextjs-ja-translation-docs.vercel.app/docs/api-routes/introduction
+- https://qiita.com/matamatanot/items/1735984f40540b8bdf91
+- https://qiita.com/thesugar/items/47ec3d243d00ddd0b4ed
+- https://zenn.dev/ria/articles/b709ae94e919c76f814a
