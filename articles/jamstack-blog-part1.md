@@ -789,12 +789,33 @@ export const highlightByHighlightJs = (content: string) => {
 
 # まとめ
 
+まだまだ実装しないといけないことはたくさんありますが
+
+- 記事一覧ページ
+- 記事詳細ページ
+
+があるブログサイトを作りました。キモになるのはビルド時にサーバサイドで実行される
+
+- `getStaticPaths`
+- `getStaticProps`
+
+でした。こいつらのおかげで SG や ISR が実装できました。また SWR も使って CSR も実装しています。CSR を使って ISR の弱点をうまくカバーすることができました。
+
+作りながら思いましたが Next はほんとにすごいフレームワークですね笑。僕みたいな初心者でもそこそこのブログを作ることができました。
+
+なにか間違いやアドバイスなどありましたらお気軽にコメントお願いします！
+
+ブログを作って終わりにならないように記事をたくさん書いていきたいと思います！（Zenn との使い分けはどうしようか..）
+
 # 参考文献
 
 - https://maku.blog/p/ny9fmty/
 - https://v2.tailwindcss.com/docs/guides/nextjs
+- https://qiita.com/dtakkiy/items/dd161e2646695b387277
 - https://github.com/vercel/next.js/blob/canary/examples/with-google-analytics/lib/gtag.js
 - https://github.com/vercel/next.js/blob/canary/examples/with-google-analytics/pages/_app.js
+- https://www.xserver.ne.jp/blog/google-analytics-ga4-setting/
+- https://panda-program.com/posts/nextjs-google-analytics#nextjs%E3%81%A7google-analytics%E3%82%92%E4%BD%BF%E3%81%88%E3%82%8B%E3%82%88%E3%81%86%E3%81%AB%E3%81%99%E3%82%8B
 - https://nextjs.org/docs/basic-features/script
 - https://zenn.dev/aiji42/articles/9a6ab12ab5f6e6
 - https://qiita.com/purpleeeee/items/cd9aca1ae735ad678355
