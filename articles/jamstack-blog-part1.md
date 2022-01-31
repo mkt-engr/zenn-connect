@@ -3,7 +3,7 @@ title: "Next.js × TypeScript × microCMS × Tailwind CSSでJamStackなブログ
 emoji: "🕌"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["Next", "TypeScript", "microCMS", "TailwindCSS"]
-published: false
+published: true
 ---
 
 # 概要
