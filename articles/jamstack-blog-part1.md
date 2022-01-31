@@ -402,7 +402,7 @@ export const getStaticProps = async () => {
 };
 ```
 
-`getAllArticles()`は micro CMS から全記事記事を取得する処理です。こちらは外部ファイル化しました。
+`getAllArticles()`は microCMS から全記事記事を取得する処理です。こちらは外部ファイル化しました。
 :::details getAllArticles()
 
 ```ts
@@ -422,7 +422,7 @@ export const getAllArticles = async (): Promise<CONTENTS> => {
 
 :::
 
-ISR ってものすごくありがたい機能なのですが再ビルドが走るのが１度アクセスがあってからなんですよね。ということは micro CMS で記事をアップしてから最初に見てくれる人には古いコンテンツを見せることになってしまいます。むしろ最初にきてくれた人に最新の記事を見せたいので CSR も実装します（正直なところ小さい自分のブログなので更新後自分でアクセスしちゃえば問題ないといえば問題ないですね..。このせいで Lighthouse の点数も下がっているような気がします）。CSR には SWR を使うことにしました。
+ISR ってものすごくありがたい機能なのですが再ビルドが走るのが１度アクセスがあってからなんですよね。ということは microCMS で記事をアップしてから最初に見てくれる人には古いコンテンツを見せることになってしまいます。むしろ最初にきてくれた人に最新の記事を見せたいので CSR も実装します（正直なところ小さい自分のブログなので更新後自分でアクセスしちゃえば問題ないといえば問題ないですね..。このせいで Lighthouse の点数も下がっているような気がします）。CSR には SWR を使うことにしました。
 
 記事を表示している部分も含めると以下の通りです。ちなみに一行目にあるのが`getStaticProps`で取得した値の型です。staticArticles は`getStaticProps`で取得した記事です。それを`useSWR`の`fallbackData`に設定することで CSR するまえのデータを画面に表示しています。その後 CSR した最新のデータを表示するという流れです。なので記事の公開後に初めてブログにアクセスした人は一瞬古い状態のサイトが見えます。
 
@@ -443,7 +443,7 @@ const Home: NextPage<Props> = ({ staticArticles }) => {
 }
 ```
 
-CSR で記事を取得する際も micro CMS のシークレットキーが必要です。単純にシークレットキーを設定した環境変数に`NEXT_PUBLIC`をつければ CSR を実装できます。しかし`NEXT_PUBLIC`のプレフィックスをつけると JavaScript にインラインで公開されてしまいます（ブラウザで容易にシークレットキーが見つけられてしまう）。そこで今回は CSR は API ルートを経由することにしました。
+CSR で記事を取得する際も microCMS のシークレットキーが必要です。単純にシークレットキーを設定した環境変数に`NEXT_PUBLIC`をつければ CSR を実装できます。しかし`NEXT_PUBLIC`のプレフィックスをつけると JavaScript にインラインで公開されてしまいます（ブラウザで容易にシークレットキーが見つけられてしまう）。そこで今回は CSR は API ルートを経由することにしました。
 
 `page/`ディレクトリの下に`api/`ディレクトリを作るとそこが API のエンドポイントとして扱われます。
 
@@ -454,7 +454,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getAllArticles } from "../../../lib/articles";
 
 const updateTopPage = async (req: NextApiRequest, res: NextApiResponse) => {
-  // micro CMSから全データを取得する
+  // microCMSから全データを取得する
   const data = await getAllArticles();
   res.status(200).json(data.contents);
 };
