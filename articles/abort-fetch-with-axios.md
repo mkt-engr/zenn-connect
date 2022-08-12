@@ -1,5 +1,5 @@
 ---
-title: "不要なリクエストを中止する"
+title: "画面遷移時に不要なAPI通信を中止してパフォーマンスを向上させる"
 emoji: "👺"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["React", "TypeScript", "Axios"]
