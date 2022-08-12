@@ -8,7 +8,7 @@ published: true
 
 # 概要
 
-React×TypeScript のプロジェクトで Axios を使った場合のリクエストとレスポンスの型についてまとめます。最終的にやることは フェイク API の [JSONPlaceholder](https://jsonplaceholder.typicode.com/) からユーザー情報を 10 件取得してそれらの情報を表示することです。最終的なコードの全容は「コードの全容」に書いてあるので急ぎの方はそちらを見てください！
+React×TypeScript のプロジェクトで Axios を使った場合のリクエストとレスポンスの型についてまとめます。最終的にやることはフェイク API の [JSONPlaceholder](https://jsonplaceholder.typicode.com/) からユーザー情報を 10 件取得してそれらの情報を表示することです。最終的なコードの全容は「コードの全容」に書いてあるので急ぎの方はそちらを見てください！
 
 この記事の中身について説明します。よくある記事としてはプレーンな JavaScript で書いた
 
@@ -184,7 +184,7 @@ const options: AxiosRequestConfig = {
 axios(options);
 ```
 
-この時 VSCode 上で`options`のところに以下のアラートが出てきました。
+この時 VS Code 上で`options`のところに以下のアラートが出てきました。
 
 ```sh
 No overload matches this call.
@@ -198,7 +198,7 @@ No overload matches this call.
 
 ## 補足その 2`AxiosResponse`の型をつける必要わかった経緯
 
-`options`に型`AxiosRequestConfig`を適用することがわかった後の話です。VSCode 上で`AxiosRequestConfig`を ctrl ＋クリックすると`node_modules/axios/index.d.ts`のファイルが表示されます。ここに型の情報がいろいろ書かれています。
+`options`に型`AxiosRequestConfig`を適用することがわかった後の話です。VS Code 上で`AxiosRequestConfig`を ctrl ＋クリックすると`node_modules/axios/index.d.ts`のファイルが表示されます。ここに型の情報がいろいろ書かれています。
 
 この中にレスポンスに関する型もあると予想し`response`で検索をかけると以下の記述がありました。
 
@@ -229,10 +229,10 @@ axios(options).then((res: AxiosResponse<USER[]>) => {
 
 ## 補足その 3(user.json と`type USER = typeof user;`に関して)
 
-1 つのユーザー情報には id,name,email などたくさんあるのでそれを 1 つずつ`{"id":number,name:string,"email":string,...}`と一つずつ書いていくとかなり手間になります。楽して`USER`の型を定義するタメに JSON と`typeof`を使います。
+1 つのユーザー情報には id,name,email などたくさんあるのでそれを 1 つずつ`{"id":number,name:string,"email":string,...}`と 1 つずつ書いていくとかなり手間になります。楽して`USER`の型を定義するタメに JSON と`typeof`を使います。
 
 user.json は[こちらの JSONPlaceholder](https://jsonplaceholder.typicode.com/users)にアクセスして表示される配列の 1 つ目の要素をコピペしたものです。
-:::details user.json(ちょっと長め)
+:::details user.json（ちょっと長め）
 
 ```JSON:user.json
 {
@@ -269,5 +269,5 @@ user.json は[こちらの JSONPlaceholder](https://jsonplaceholder.typicode.com
 type USER typeof user
 ```
 
-とすると簡単に USER 型が得られます。ちなみに VSCode 上で`USER`をホバーすると以下の画像のようなものが表示されます。
+とすると簡単に USER 型が得られます。ちなみに VS Code 上で`USER`をホバーすると以下の画像のようなものが表示されます。
 ![](/images/USER_type.png)
