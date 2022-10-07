@@ -41,3 +41,5 @@ npx zenn new:article --slug 記事のスラッグ --title タイトル --type id
   絶対パスで行う。
 
 # テスト
+
+ソースツリーでコマンドを使えるか
