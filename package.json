@@ -20,6 +20,6 @@
   "dependencies": {
     "axios": "^0.24.0",
     "react-router-dom": "^6.0.2",
-    "zenn-cli": "^0.1.117"
+    "zenn-cli": "^0.1.132"
   }
 }

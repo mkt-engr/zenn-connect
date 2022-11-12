@@ -82,7 +82,7 @@
   dependencies:
     "loose-envify" "^1.1.0"
 
-"zenn-cli@^0.1.117":
-  "integrity" "sha512-1IvPRwB+cTRl3R+5MgdFm6h++c3xzRTzrtxX5KRq2M7+AB2dF1hWBqwTS8n+u/edkTZxhXQJi94Uw8cbMdXGfg=="
-  "resolved" "https://registry.npmjs.org/zenn-cli/-/zenn-cli-0.1.117.tgz"
-  "version" "0.1.117"
+"zenn-cli@^0.1.132":
+  "integrity" "sha512-5u4EZwIdtiVZCK8H4PdxcN86NeXz/toIvYX2q2Os1gowkDMi+Bxi/gq+SZKJ53EnTCe2njR0yLFYMXOS5S6a2Q=="
+  "resolved" "https://registry.npmjs.org/zenn-cli/-/zenn-cli-0.1.132.tgz"
+  "version" "0.1.132"
