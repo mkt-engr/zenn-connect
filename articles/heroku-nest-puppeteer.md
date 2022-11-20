@@ -115,7 +115,37 @@ heroku open
 
 これでブラウザに「Hello World!」と表示されていれば正しくデプロイされています！
 
-# Puppeteer を動かす&デプロイ
+# Puppeteer を Heroku 上で動かす
+
+## Heroku で Puppeteer の buildpack を追加
+
+Buildpack とは[公式サイト](https://jp.heroku.com/elements/buildpacks)によると
+
+> Heroku Buildpack は、Heroku でアプリケーションをコンパイルするために使用するオープンソーススクリプトを集めたもの
+
+ということだそうです。
+
+つまり Heroku で Puppeteer を使うには NPM で Puppeteer をインストールするだけではダメで buildpack を追加する必要があります。buildpack を追加するには
+
+```
+heroku buildpacks:add jontewks/puppeteer
+```
+
+としてください。追加で日本語対応をしている Heroku の buildpack を入れる場合は
+
+```
+heroku buildpacks:add https://github.com/gnuletik/puppeteer-heroku-buildpack-fonts
+```
+
+としてください。管理画面から buildpack を追加する場合は
+![Heroku設定画面](/images/heroku-nest-puppeteer/heroku-settings-1.png)
+の Setting から
+![Heroku設定画面](/images/heroku-nest-puppeteer/heroku-add-buildpack.png)
+に buildpack の URL（https://github.com/gnuletik/puppeteer-heroku-buildpack-fonts)を入力して保存してください。
+こちらも日本語対応の buildpack は廃止されたので使わないように気を付けてください。
+https://github.com/CoffeeAndCode/puppeteer-heroku-buildpack
+
+## Puppeteer のエンドポイントを作成
 
 まず Puppeteer のためのエンドポイントを作ります。
 
@@ -136,31 +166,7 @@ npx nest generate resource
 
 のように答えてください。
 
-```
-npm i puppeteer
-```
-
-Heroku で Puppeteer を使う buildpack を入れる場合は
-
-```
-heroku buildpacks:add jontewks/puppeteer
-```
-
-としてください。追加で日本語対応をしている Heroku の buildpack を入れる場合は
-
-```
-heroku buildpacks:add https://github.com/gnuletik/puppeteer-heroku-buildpack-fonts
-```
-
-としてください。管理画面から buildpack を追加する場合は
-![Heroku設定画面](/images/heroku-nest-puppeteer/heroku-settings-1.png)
-の Setting から
-![Heroku設定画面](/images/heroku-nest-puppeteer/heroku-add-buildpack.png)
-に buildpack の URL（https://github.com/gnuletik/puppeteer-heroku-buildpack-fonts)を入力して保存してください。
-こちらも日本語対応の buildpack は廃止されたので使わないように気を付けてください。
-https://github.com/CoffeeAndCode/puppeteer-heroku-buildpack
-
-環境変数を使うために
+次に環境変数を使うために
 
 ```
 npm install @nestjs/config
@@ -179,6 +185,13 @@ import { ConfigModule } from '@nestjs/config';
 ```
 
 app.module.ts に追加する。（https://qiita.com/piggydev/items/e76adcc3a65364f98537）
+
+```
+npm i puppeteer
+```
+
+TODO
+Puppeteer で Google 検索するコードを書く
 
 #
 
