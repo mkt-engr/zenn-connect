@@ -8,11 +8,15 @@ published: false
 
 # 概要
 
-2022 年 11 月 28 日に無料プランが終了します。11 月 28 日以降に以下の内容を再現しようとすると料金が発生しますのでご注意ください。
+:::message alert
+2022 年 11 月 28 日に無料プランが終了します。11 月 28 日以降に以下の内容を再現しようとすると利用料金が発生しますのでご注意ください。
+:::
 
 この記事では Heroku 上で NestJS を用いて Puppeteer を動かせるとこまでをこちらの記事で説明します。
 
 最終的な成果物は Puppeteer で「Puppeteer」とグーグルで検索した結果を返却するものです。
+
+リポジトリは[こちら](https://github.com/mkt-engr/heroku-nest-puppeteer)です。
 
 # Heroku 環境準備
 
@@ -314,10 +318,24 @@ git push heroku main
 }
 ```
 
-#
-
 # まとめ
+
+- Heroku 上で Puppeteer を動かすには Buildpack が必要
+- Puppeteer の起動オプションが大事
+  ```js
+  const LAUNCH_OPTION = process.env.DYNO
+    ? { args: ["--no-sandbox", "--disable-set/uid-sandbox"] }
+    : {
+        headless: false,
+      };
+  const browser = await puppeteer.launch(LAUNCH_OPTION);
+  ```
 
 # 参考
 
+https://github.com/jontewks/puppeteer-heroku-buildpack
+https://jp.heroku.com/elements/buildpacks
+https://github.com/gnuletik/puppeteer-heroku-buildpack-fonts
+https://github.com/CoffeeAndCode/puppeteer-heroku-buildpack
+https://github.com/puppeteer/puppeteer/tree/main/examples
 https://stackoverflow.com/questions/52225461/puppeteer-unable-to-run-on-heroku
