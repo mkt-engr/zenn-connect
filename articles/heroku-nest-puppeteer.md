@@ -3,7 +3,7 @@ title: "Heroku上でNest.jsを使ってPuppeteerを動かす"
 emoji: "📌"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [Heroku, Nestjs, TypeScript, Puppeteer]
-published: false
+published: true
 ---
 
 # 概要
@@ -12,22 +12,28 @@ published: false
 2022 年 11 月 28 日に無料プランが終了します。11 月 28 日以降に以下の内容を再現しようとすると利用料金が発生しますのでご注意ください。
 :::
 
-この記事では Heroku 上で NestJS を用いて Puppeteer を動かせるとこまでをこちらの記事で説明します。
+こんにちは。まっきんとっしゅです（[@mkt_phys](https://twitter.com/mkt_phys)）。この記事では Heroku 上で NestJS を用いて Puppeteer を動かせるとこまでをで説明します。
 
-最終的な成果物は Puppeteer で「Puppeteer」とグーグルで検索した結果を返却するものです。
+最終的な成果物は Puppeteer で「Puppeteer」とグーグルで検索した結果を JSON として返却するコードです。
 
 リポジトリは[こちら](https://github.com/mkt-engr/heroku-nest-puppeteer)です。
 
+## 環境情報
+
+| ライブラリ | バージョン                             |
+| ---------- | -------------------------------------- |
+| NestCLI    | 8.2.5                                  |
+| HerokuCLI  | heroku/7.66.4 darwin-x64 node-v14.19.0 |
+
 # Heroku 環境準備
 
+まずは Heroku 上でアプリを作成します。
 ![Herokuアプリ一覧画面](/images/heroku-nest-puppeteer/heroku-app-list.png)
 右上の「New」をクリックして
 ![Herokuアプリ作成画面](/images/heroku-nest-puppeteer/heroku-create-app.png)
-適当な App name を設定して「Create app」をクリックしてください
+適当な App name を設定して「Create app」をクリックしてください。
 
-Heroku CLI を用いてデプロイを行います。
-
-Heroku CLI のインストールがまだの方は[こちら](https://devcenter.heroku.com/ja/articles/heroku-cli)を参考にインストールを行ってください。
+次に Heroku CLI を用いてデプロイを行う準備をします。Heroku CLI のインストールがまだの方は[こちら](https://devcenter.heroku.com/ja/articles/heroku-cli)を参考にインストールを行ってください。
 
 ```
 heroku --version
@@ -37,6 +43,8 @@ heroku --version
 のように version が出ればインストールが完了しています。
 
 # Heroku にデプロイ
+
+NestCLI でテンプレートを作成してそれを Heroku 上で動かせるように編集してデプロイします。
 
 ## NestCLI でテンプレート作成
 
@@ -121,6 +129,8 @@ heroku open
 
 # Puppeteer を Heroku 上で動かす
 
+Puppeteer で Google 検索するコードを書いて Heroku にデプロイします。
+
 ## Heroku で Puppeteer の buildpack を追加
 
 Buildpack とは[公式サイト](https://jp.heroku.com/elements/buildpacks)によると
@@ -182,7 +192,8 @@ src/
 └── app.module.ts
 ```
 
-となっています（テスト用のファイルなども生成されていますが省略しています）。
+となっています（テスト用のファイルなども生成されていますが省略しています）。今回編集するのは puppeteer.controller.ts と puppeteer.service.ts の 2 ファイルだけです.
+
 /puppeteer にアクセスした時に puppeteer に Google 検索をさせるさせるのでまずは Controller を
 
 ```ts:puppeteer.controller.ts
@@ -197,7 +208,7 @@ export class PuppeteerController {
 }
 ```
 
-とします（メソッド名は適当です、すみません...）。
+とします（メソッド名はデフォルトのままです、すみません...）。
 
 次にサービスを編集します。サービスに Puppeteer の具体的な処理を書いていきます。まず
 
@@ -318,6 +329,8 @@ git push heroku main
 }
 ```
 
+:::
+
 # まとめ
 
 - Heroku 上で Puppeteer を動かすには Buildpack が必要
@@ -330,6 +343,106 @@ git push heroku main
       };
   const browser = await puppeteer.launch(LAUNCH_OPTION);
   ```
+
+## 課題
+
+まとめではないですがここに書いておきます。Puppeteer で Google 検索をした際ローカルと Heroku で検索結果が
+
+- ローカル：日本語で検索したもの
+- Heroku：英語で検索したもの
+
+となっています。もう少し具体的に言うとローカルでは
+::: details レスポンス（日本語）
+
+```json
+{
+  "searchResults": [
+    {
+      "link": "https://github.com/puppeteer/puppeteer",
+      "title": "Puppeteer - Headless Chrome Node.js API - GitHub"
+    },
+    {
+      "link": "https://www.cresco.co.jp/blog/entry/15215/",
+      "title": "puppeteerで始めるブラウザ操作の自動化 - 株式会社クレスコ"
+    },
+    {
+      "link": "https://gihyo.jp/article/2022/09/rapid-learning-puppeteer-01",
+      "title": "第1章 Puppeteerの魅力は何か ～ヘッドレスChromeを自由 ..."
+    },
+    {
+      "link": "https://developer.chrome.com/docs/puppeteer/",
+      "title": "Puppeteer - Chrome Developers"
+    },
+    {
+      "link": "https://www.4peace.co.jp/tech/456/",
+      "title": "Node.jsでPuppeteerを使いChromeを実行して画面キャプチャ ..."
+    },
+    {
+      "link": "https://ejje.weblio.jp/content/puppeteer",
+      "title": "英語「puppeteer」の意味・使い方・読み方 | Weblio英和辞書"
+    },
+    {
+      "link": "https://www.wakuwakubank.com/posts/620-javascript-puppeteer/",
+      "title": "Puppeteerの使い方(スクレイピング, フロントテストで活用)"
+    },
+    {
+      "link": "https://jestjs.io/ja/docs/puppeteer",
+      "title": "puppeteer を使用する - Jest"
+    },
+    {
+      "link": "https://www.sbbit.jp/article/cont1/34562",
+      "title": "Google開発の「Puppeteer」とは？ マウスやキーボードなし ..."
+    },
+    {
+      "link": "https://zuma-lab.com/posts/node-web-scraping",
+      "title": "ZUMA Lab"
+    }
+  ]
+}
+```
+
+:::
+のようなレスポンスとなり検索結果に日本語のページも含まれています。
+
+言語設定を変えるために
+https://stackoverflow.com/questions/46908636/how-to-specify-browser-language-in-puppeteer
+
+https://qiita.com/KenRoda/items/fc3dd232edab741b9c29
+などを参考にして
+
+```js
+const browser = await puppeteer.launch({
+  args: ["--no-sandbox", "--disable-set/uid-sandbox", "--lang=ja"],
+});
+```
+
+や
+
+```js
+await page.setExtraHTTPHeaders({
+  "Accept-Language": "ja",
+});
+```
+
+や
+
+```js
+// Set the language forcefully on javascript
+await page.evaluateOnNewDocument(() => {
+  Object.defineProperty(navigator, "language", {
+    get: function () {
+      return "ja";
+    },
+  });
+  Object.defineProperty(navigator, "languages", {
+    get: function () {
+      return ["ja-JP", "ja"];
+    },
+  });
+});
+```
+
+をしたのですが検索結果は変わらず。。この辺りはもう少し調査が必要になりそうです。
 
 # 参考
 
