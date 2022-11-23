@@ -10,9 +10,9 @@ published: false
 
 2022 年 11 月 28 日に無料プランが終了します。11 月 28 日以降に以下の内容を再現しようとすると料金が発生しますのでご注意ください。
 
-Heroku 上で NestJS を用いて Puppeteer を動かせるとこまでをこちらの記事で説明します。
+この記事では Heroku 上で NestJS を用いて Puppeteer を動かせるとこまでをこちらの記事で説明します。
 
-最終的な成果物は Puppeteer で「Puppeteer」とグーグル検索した
+最終的な成果物は Puppeteer で「Puppeteer」とグーグルで検索した結果を返却するものです。
 
 # Heroku 環境準備
 
@@ -142,7 +142,7 @@ heroku buildpacks:add https://github.com/gnuletik/puppeteer-heroku-buildpack-fon
 の Setting から
 ![Heroku設定画面](/images/heroku-nest-puppeteer/heroku-add-buildpack.png)
 に buildpack の URL（https://github.com/gnuletik/puppeteer-heroku-buildpack-fonts)を入力して保存してください。
-こちらも日本語対応の buildpack は廃止されたので使わないように気を付けてください。
+こちらの日本語対応の buildpack はメンテナンスが終了したので使わないように気を付けてください。
 https://github.com/CoffeeAndCode/puppeteer-heroku-buildpack
 
 ## Puppeteer のエンドポイントを作成
@@ -164,37 +164,160 @@ npx nest generate resource
 # Yes
 ```
 
-のように答えてください。
-
-次に環境変数を使うために
+のように答えてください。そうするとディレクトリ構造は
 
 ```
-npm install @nestjs/config
+src/
+├── puppeteer/
+│   ├── dto/
+│   ├── entities/
+│   ├── puppeteer.controller.ts
+│   └── puppeteer.service.ts
+├── app.controller.ts
+├── app.service.ts
+└── app.module.ts
 ```
 
-して
+となっています（テスト用のファイルなども生成されていますが省略しています）。
+/puppeteer にアクセスした時に puppeteer に Google 検索をさせるさせるのでまずは Controller を
 
-```diff ts:app.module.ts
-import { ConfigModule } from '@nestjs/config';
-@Module({
--  imports: [PuppeteerModule],
-+  imports: [PuppeteerModule, ConfigModule.forRoot()],
- controllers: [AppController],
- providers: [AppService],
-})
+```ts:puppeteer.controller.ts
+@Controller('puppeteer')
+export class PuppeteerController {
+  constructor(private readonly puppeteerService: PuppeteerService) {}
+
+  @Get()
+  findAll() {
+    return this.puppeteerService.findAll();
+  }
+}
 ```
 
-app.module.ts に追加する。（https://qiita.com/piggydev/items/e76adcc3a65364f98537）
+とします（メソッド名は適当です、すみません...）。
+
+次にサービスを編集します。サービスに Puppeteer の具体的な処理を書いていきます。まず
 
 ```
 npm i puppeteer
 ```
 
-TODO
-Puppeteer で Google 検索するコードを書く
+として Puppeteer をインストールしたのち
+
+```ts:puppeteer.service.ts
+import puppeteer from "puppeteer"
+
+@Injectable()
+export class PuppeteerService {
+
+  async findAll() {
+    //Puppeteerの起動オプション
+    //ローカル：ヘッドレスモードをオフにする(ブラウザが起動している様子が見えるようにする)
+    const LAUNCH_OPTION = process.env.DYNO
+      ? { args: ['--no-sandbox', '--disable-set/uid-sandbox'] }
+      : {
+          headless: false,
+        };
+
+    const browser = await puppeteer.launch(LAUNCH_OPTION);
+    const page = await browser.newPage();
+
+    // Googleページを開く
+    await page.goto('https://www.google.com/');
+
+    // 検索boxに`puppeteer`を入力
+    await page.type('input[name="q"]', 'puppeteer');
+
+    // 「Enter」ボタン押下
+    await page.keyboard.press('Enter');
+
+    // 検索結果要素の表示まで待機
+    await page.waitForSelector('.LC20lb', { visible: true });
+
+    // 検索結果のタイトル・リンク一覧取得
+    const searchResults = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLAnchorElement>('.LC20lb')].map(
+        (element) => {
+          const ppp = element.parentElement as HTMLAnchorElement;
+          return {
+            link: ppp.href || '何もなかった',
+            title: element.innerText,
+          };
+        },
+      ),
+    );
+
+    //ブラウザを閉じる
+    await browser.close();
+    return { searchResults };
+  }
+}
+```
+
+とします。Puppeteer の操作自体で特段難しいものはありません。ポイントは Puppeteer の起動オプションの指定です。Heroku 上で Puppeteer を起動するには
+
+```ts
+const LAUNCH_OPTION = process.env.DYNO
+  ? { args: ["--no-sandbox", "--disable-set/uid-sandbox"] }
+  : {
+      headless: false,
+    };
+const browser = await puppeteer.launch(LAUNCH_OPTION);
+```
+
+と書いたように`{ args: ["--no-sandbox", "--disable-set/uid-sandbox"] }`が必要になります。Heroku 上でアプリが動いているかを判別するために`process.env.DYNO`を参照しています。
+
+また、ローカルで Puppeteer を起動する場合はブラウザの入力操作を見えるように`{headless: false}`としてブラウザが起動するようにしています。
+
+これで
+
+```
+git add .
+git commit -m "update"
+git push heroku main
+```
+
+とすれば Heroku にデプロイが完了します。ブラウザや Postman などで/puppeteer を叩いて以下のようなレスポンスが返っていれば OK です!
+:::details レスポンス（少し長いのでアコーディオンにしてます）
+
+```json
+{
+  "searchResults": [
+    {
+      "link": "https://pptr.dev/",
+      "title": "Puppeteer | Puppeteer"
+    },
+    {
+      "link": "https://developer.chrome.com/docs/puppeteer/",
+      "title": "Puppeteer - Chrome Developers"
+    },
+    {
+      "link": "https://www.npmjs.com/package/puppeteer",
+      "title": "Puppeteer - npm"
+    },
+    {
+      "link": "https://en.wikipedia.org/wiki/Puppeteer",
+      "title": "Puppeteer - Wikipedia"
+    },
+    {
+      "link": "https://devdocs.io/puppeteer/",
+      "title": "Puppeteer documentation - DevDocs"
+    },
+    {
+      "link": "https://www.educative.io/answers/what-is-puppeteer",
+      "title": "What is Puppeteer? - Educative.io"
+    },
+    {
+      "link": "https://www.merriam-webster.com/dictionary/puppeteer",
+      "title": "Puppeteer Definition & Meaning - Merriam-Webster"
+    }
+  ]
+}
+```
 
 #
 
 # まとめ
 
 # 参考
+
+https://stackoverflow.com/questions/52225461/puppeteer-unable-to-run-on-heroku
