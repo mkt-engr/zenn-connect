@@ -1,5 +1,5 @@
 ---
-title: "Herokuの代替となるPaaS「Render」で簡単なToDoアプリを作って遊んでみた"
+title: "Herokuの代替となるPaaS「Render」で簡単なToDoアプリを作って遊んでみた（with Nestjs,Nextjs）"
 emoji: "🐈"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["Render", "TypeScript", "Nextjs", "Nestjs", "Postgres"]
@@ -31,7 +31,7 @@ ToDo アプリとしての機能は
 - タスク削除（物理削除）
 - タスク完了と未完了の切り替え
 
-と少なめですがぜひ遊んでみてください（エラーハンドリングはしてないので不具合が起こっても我慢してください）。
+と少なめですがぜひ遊んでみてください（エラーハンドリングはしてないので不具合が起こっても許してください）。
 
 ::: details ToDo アプリを実際に動かしてみた様子（GIF）
 
@@ -147,21 +147,368 @@ TODO:HTTP2 で通信しているとか書く？
 
 ### npm が使えない(かもしれない)
 
-デメリットでもないですが Render のダッシュボードで指定するビルドコマンドとスタートコマンドに npm が使えません。
+デメリットでもないですが私が操作した限り Render のダッシュボードで指定するビルドコマンドとスタートコマンドに npm が使えませんでした。
 ビルドコマンドに関するドキュメントには例として yarn が使われていましたが npm が使えないとは書いてなかったのでもしかしたら npm も使えるかもしれません。
 
-# データベース編(Postgres)
+### 日本に近いリージョンがない
 
-# バックエンド編(Nestjs)
+TODO:
 
-# フロントエンド編(Nextjs)
+# ToDo アプリ作成
+
+以下の 3 本立てでアプリ作成の流れを説明します。
+
+1. データベース編（Postgres）
+2. バックエンド編（Nestjs）
+3. フロントエンド編（Nextjs）
+
+## データベース編(Postgres)
+
+ダッシュボードのヘッダーにある「New+」から「PostgreSQL」を選択します。
+![ダッシュボード](/images/todo-app-with-render/create-db-01.png)
+
+次にデータベースの名前などを入力し、スペックを選択して「Create Database」をクリックするとデータベースが作成されます。
+![DBプラン設定](/images/todo-app-with-render/create-db-02.png)
+
+なお、無料プランではデータベースは 1 つしか作れないので気をつけてください。
+
+データベースが作成できたらダッシュボードの Info の欄から接続情報を確認してください。「Internal Database URL」の値は次のバックエンド編で使います。
+![DB接続情報](/images/todo-app-with-render/db-info.png)
+
+## バックエンド編(Nestjs)
+
+言語のフレームワークは NestJS、OR マッパーは Prisma[^1]を使います。
+
+### テンプレート作成
+
+NestCLI でテンプレートを作成します。`-p`のオプションでパッケージマネージャーを`yarn`に指定できます。
+
+```
+npx @nestjs/cli new render-backend -p yarn
+```
+
+Docker コンテナの上に PostgreSQL を立てます。docker-compose.yaml は以下のようにします。
+
+```yaml
+version: "3.8"
+services:
+  postgres:
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: render-postgres
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+volumes:
+  postgres:
+```
+
+データベース編で PostgreSQL のバージョンは 14 にしたので yaml ファイルでもバージョンは 14 にしてください。
+最後に以下のコマンドを実行してデータベースを起動してください。
+
+```
+docker-compose up
+```
+
+バックグラウンドで起動したい場合は以下のように`-d`をつけて実行してください。
+
+```
+docker-compose up -d
+```
+
+### Prisma の導入
+
+OR マッパーの Prisma の設定を行います。まずは Prisma のインストールと初期化を行います。
+
+```
+npm i -D prisma
+npx prisma init
+```
+
+このコマンドを実行すると`.env`ファイルが作成されています。docker-compose.yaml で指定した値を元に`.env`ファイルの`DATABASE_URL`の部分を
+
+```
+DATABASE_URL="postgresql://postgres:mypassword@localhost:5432/render-postgres?schema=public"
+```
+
+と書き換えてください。
+
+次にスキーマを作成します。テーブルとそのテーブルが持つカラムを決めます。
+
+```diff prisma:prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
++ model Task {
++  id        Int      @id @default(autoincrement())
++  content   String
++  done      Boolean  @default(false)
++  createdAt DateTime @default(now())
++  updatedAt DateTime @updatedAt
++ }
+```
+
+- タスクの内容:`content`
+- タスクの完了フラグ:`done`
+
+としています。タスクを生成した時、タスクは未完了なので`done`はデフォルトで`false`としておきました。今回の ToDo アプリに編集機能はないですがないと気持ち悪いので更新日のカラム`updatedAt`もつけています。
+
+スキーマができたので次はマイグレーション（テーブルの作成）を行います。
+
+```
+npx prisma migrate dev --name "init"
+```
+
+実際にテーブルが作成されたかブラウザで確認するために Prisma が用意している Prisma Studio を起動します。
+
+```
+npx prisma studio
+```
+
+![Prisma Studio](/images/todo-app-with-render/prisma-studio.png)
+
+Task が作成されていれば OK です。レコードが入っていなければ 5 ではなく 0 と表示されています。
+
+次にレコードを 2 件追加するコードを作成します。
+:::details seed.ts
+
+```ts:prisma/seed.ts
+import { PrismaClient } from '@prisma/client';
+
+// Prismaクライアントの初期化
+const prisma = new PrismaClient();
+
+async function main() {
+  // ダミーデータの作成
+  const task1 = await prisma.task.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      content: 'Prisma Adds Support for MongoDB',
+    },
+  });
+  const task2 = await prisma.task.upsert({
+    where: { id: 2 },
+    update: {},
+    create: {
+      content: 'アドベントカレンダー',
+    },
+  });
+
+  console.log({ task1, task2 });
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    // Prismaクライアントのクローズ
+    await prisma.$disconnect();
+  });
+
+```
+
+:::
+
+このコードを実行するために package.json を編集し
+
+```diff json:package.json
+ "scripts": {
+    // ...
+  },
++ "prisma": {
++   "seed": "ts-node prisma/seed.ts"
++ }
+```
+
+次のコマンドを実行するとレコードが 2 件追加されます。
+
+```
+npx prisma db seed
+```
+
+コマンドを実行して Prisma Studio で以下のようにレコードが 2 件追加されていることを確認してください。
+![レコード追加後Prisma Studioで確認](/images/todo-app-with-render/prisma-studio-after-seed.png)
+
+最後に Prisma のサービスを作成します。Prisma のサービスでは Prisma クライアントインスタンスの作成とデータベースへの接続を行います。
+
+Prisma のサービスと Prisma サービスをエクスポートするためのモジュールを作成します。
+
+```
+npx nest generate module prisma
+npx nest generate service prisma
+```
+
+サービスでは Graceful shutdown を行うメソッドを記載します。
+
+```ts:src/prisma/prisma.service.ts
+import { INestApplication, Injectable } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+
+@Injectable()
+export class PrismaService extends PrismaClient {
+  //Graceful shutdownを行う
+  async enableShutdownHooks(app: INestApplication) {
+    this.$on('beforeExit', async () => {
+      await app.close();
+    });
+  }
+}
+```
+
+モジュールは以下のようにして他のモジュールから Prisma サービスを使えるようにします。
+
+```ts:src/prisma/prisma.module.ts
+import { Module } from '@nestjs/common';
+import { PrismaService } from './prisma.service';
+
+@Module({
+  providers: [PrismaService],
+  exports: [PrismaService],
+})
+export class PrismaModule {}
+```
+
+### エンドポイントの作成
+
+データの投入ができたので次はデータの CRUD 処理を行うためのエンドポイントを作成するために以下のコマンドを実行します。
+
+```
+npx @nestjs/cli generate resource
+```
+
+いくつか質問されるので
+
+1. What name would you like to use for this resource (plural, e.g., "users")? **tasks**
+2. What transport layer do you use? **REST API**
+3. Would you like to generate CRUD entry points? **Yes**
+
+と答えてください。これで CRUD のエンドポイントが作成されました。
+
+Prisma のサービスを用いてデータの作成、取得、削除を行いたいので以下のようにしてください。
+
+```ts:src/tasks/tasks.service.ts
+@Injectable()
+export class TasksService {
+  constructor(private prisma: PrismaService) {}
+  //新規作成
+   create(createTaskDto: CreateTaskDto) {
+    return this.prisma.task.create({ data: createTaskDto });
+  }
+
+  //全件取得
+  findAll() {
+    return this.prisma.task.findMany();
+  }
+
+  //削除
+  remove(id: number) {
+    return this.prisma.task.delete({ where: { id } });
+  }
+}
+```
+
+なおタスクの DTO は以下の通りです。
+
+```ts:src/tasks/dto/create-task.dto.ts
+export class CreateTaskDto {
+  //タスクの内容
+  content: string;
+
+  //タスクを完了したか
+  done: boolean = false;
+}
+
+```
+
+最後に全件取得だけ動作確認します。
+
+```
+yarn start:dev
+```
+
+で NestJS を起動して http://localhost:3000/tasks へアクセスした時に登録したレコードが 2 件返ってきていれば OK です。
+
+```ts
+[
+  {
+    id: 1,
+    content: "Prisma Adds Support for MongoDB",
+    done: false,
+    createdAt: "2022-12-12T12:21:47.670Z",
+    updatedAt: "2022-12-12T12:21:47.670Z",
+  },
+  {
+    id: 2,
+    content: "アドベントカレンダー",
+    done: false,
+    createdAt: "2022-12-12T12:21:47.707Z",
+    updatedAt: "2022-12-12T12:21:47.707Z",
+  },
+];
+```
+
+### Render で Nestjs のコードをデプロイ
+
+作成した Nest のコードを Render にデプロイします。Render のダッシュボードから「Web Service」を作成します。
+![Web Serviceの作成](/images/todo-app-with-render/new-web-service.png)
+
+次に「Connect GitHub」をクリックして Render と GitHub を連携します。
+![GitHubとの連携](/images/todo-app-with-render/connect-repository.png)
+
+次にデプロイのための設定を行います。
+![Nestのデプロイのその1](/images/todo-app-with-render/deploy-nest-01.png)
+Region は日本から一番近い「Singapore（Southeast Asia）」を選択しました（日本のリージョンもいつか出てほしいなあ）。
+
+![Nestのデプロイのその2](/images/todo-app-with-render/deploy-nest-02.png)
+Nestjs で作成したので Environment は`Node`を選択選択してください。
+Build Command はマイグレーションとデータの登録を行うので少し長くなりますが
+
+```
+yarn && yarn build && npx prisma migrate deploy && npx prisma db seed
+```
+
+とします。
+Start Command は
+
+```
+yarn start:dev
+```
+
+とします。これらのコマンドはすべて package.json で設定した script を拝借しています。最後に Advanced のところで環境変数を設定します。
+![Nestのデプロイのその3](/images/todo-app-with-render/deploy-nest-03.png)
+
+- キー：`DATABASE_URL`
+- バリュー：データベースを作成した時に生成された接続情報の「Internal Database URL」の値
+
+として「Create Web Service」をクリックすればデプロイが完了します。今後 main ブランチにプッシュすればそれをトリガーにして自動デプロイされます。
+
+## フロントエンド編(Nextjs)
 
 # まとめ
 
 # 参考
+
+[^1]: Prisma の[公式ドキュメント](https://www.prisma.io/)
 
 自動デプロイスキップの話
 https://render.com/docs/deploys
 
 無料の WebService は 15 分使用されないとインスタンスが停止する件
 https://render.com/docs/free#free-web-services
+
+```
+
+```
