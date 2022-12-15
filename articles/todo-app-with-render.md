@@ -1,5 +1,5 @@
 ---
-title: "Herokuの代替となるPaaS「Render」で簡単なToDoアプリを作って遊んでみた（with Nestjs,Nextjs）"
+title: "Herokuの代替となり得るPaaS「Render」で簡単なToDoアプリを作って遊んでみた（Nestjs,Nextjs）"
 emoji: "🐈"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["Render", "TypeScript", "Nextjs", "Nestjs", "Postgres"]
@@ -184,7 +184,7 @@ TODO:
 NestCLI でテンプレートを作成します。`-p`のオプションでパッケージマネージャーを`yarn`に指定できます。
 
 ```
-npx @nestjs/cli new render-backend -p yarn
+npx @nestjs/cli new render-app-nest -p yarn
 ```
 
 Docker コンテナの上に PostgreSQL を立てます。docker-compose.yaml は以下のようにします。
@@ -462,7 +462,7 @@ yarn start:dev
 
 ### Render で Nestjs のコードをデプロイ
 
-作成した Nest のコードを Render にデプロイします。Render のダッシュボードから「Web Service」を作成します。
+作成した Nestjs のコードを Render にデプロイします。Render のダッシュボードから「Web Service」を作成します。
 ![Web Serviceの作成](/images/todo-app-with-render/new-web-service.png)
 
 次に「Connect GitHub」をクリックして Render と GitHub を連携します。
@@ -496,6 +496,314 @@ yarn start:dev
 として「Create Web Service」をクリックすればデプロイが完了します。今後 main ブランチにプッシュすればそれをトリガーにして自動デプロイされます。
 
 ## フロントエンド編(Nextjs)
+
+言語のフレームワークは Nextjs、HTTP クライアントは Axios、CSS フレームワークは MUI を使います。
+
+### テンプレート作成
+
+`Create Next App`でテンプレートを作成します。
+
+```
+npx create-next-app render-app-next --ts
+```
+
+Axios と MUI をインストールします。
+
+```
+yarn add axios
+yarn add @mui/material @emotion/react @emotion/styled
+yarn add @mui/icons-material
+```
+
+### API Routes 作成
+
+なんどなくバックエンドのエンドポイントはブラウザから確認されたくないのでバックエンドのリクエストは API Routes 経由で行います。
+
+```ts:pages/api/task/index.ts
+type Task = {
+  id: number;
+  content: string;
+  done: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+//レスポンスに必要な型
+type Data = Task[] | Task;
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) {
+  const { method, body } = req;
+  switch (method) {
+    case "GET":
+      // Get data from your database
+      const options: AxiosRequestConfig = {
+        url: `${process.env.HOST}/tasks`,
+        method: "GET",
+      };
+      const r: AxiosResponse<Task[]> = await axios(options);
+      const { data } = r;
+      res.status(200).json(data);
+      break;
+
+    case "POST":
+      // Create data
+      const optionsPost: AxiosRequestConfig = {
+        url: `${process.env.HOST}/tasks`,
+        method: "POST",
+        data: body,
+      };
+      const r2: AxiosResponse<Task> = await axios(optionsPost);
+      const { data: dataPost } = r2;
+      res.status(200).json(dataPost);
+      break;
+
+    default:
+      res.setHeader("Allow", ["GET", "PUT"]);
+      res.status(405).end(`Method ${method} Not Allowed`);
+  }
+}
+```
+
+リクエストのメソッドで処理を分岐させています。
+
+- GET:全件取得
+- POST:新規作成
+
+としています。
+
+削除については以下の通りです。
+
+```ts:pages/api/task/[id].ts
+export default async function taskHandler(
+  req: NextApiRequest,
+  res: NextApiResponse<number>
+) {
+  //[id]は動的
+  const {
+    query: { id },
+    method,
+    body,
+  } = req;
+  switch (method) {
+    case "DELETE":
+      // Delete data in your database
+      const optionsDelete = {
+        url: `${process.env.HOST}/tasks/${id}`,
+        method: "DELETE",
+        headers: { "Accept-Encoding": "gzip,deflate,compress" },
+      };
+      const r3: AxiosResponse<number> = await axios(optionsDelete);
+      const { data: deletedId } = r3;
+      res.status(200).json(deletedId);
+      break;
+
+    default:
+      res.setHeader("Allow", ["DELETE"]);
+      res.status(405).end(`Method ${method} Not Allowed`);
+  }
+}
+```
+
+`[id]`はタスクを特定するための ID です。削除のリクエストを送る際にどのタスクかを判定するために利用しています。
+
+### View 部分
+
+いかんせん長いのでアコーディオンにしました。ざっくり分けると以下の通りです。
+
+- 前半部分：タスクの作成、削除、完了・未完了ロジックの記述
+- 後半部分：MUI でフォームの作成
+
+:::details index.tsx
+
+```ts:pages/index.tsx
+type Task = {
+  id: number;
+  content: string;
+  done: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type Props = {
+  staticTasks: Task[];
+};
+
+const Example: NextPage<Props> = ({ staticTasks }) => {
+  const [tasks, setTasks] = useState(staticTasks);
+  const [newTask, setNewTask] = useState("");
+  const [deletedTaskId, setDeletedTaskId] = useState(-1); //削除ボタンを押したタスクを特定するために利用（２度押し防止）
+
+  //タスクの作成
+  const handleSubmit = async (e: SyntheticEvent) => {
+    e.preventDefault();
+
+    const optionsPost: AxiosRequestConfig = {
+      url: "api/task",
+      method: "POST",
+      data: { content: newTask },
+    };
+    const { data } = await axios(optionsPost);
+    if (!data) return;
+    setTasks((prev) => {
+      return [...prev, data];
+    });
+
+    //タスクの入力フォームをクリア
+    setNewTask("");
+  };
+
+  //タスクの削除
+  const handleDelete = async (id: number) => {
+    const options: AxiosRequestConfig = {
+      url: `api/task/${id}`,
+      method: "DELETE",
+      // headers: { "Accept-Encoding": "gzip,deflate,compress" },
+    };
+    const { data } = await axios(options);
+    setTasks((prev) => {
+      const newTasks = prev.filter((task) => {
+        return task.id !== data.id;
+      });
+      return newTasks;
+    });
+  };
+
+  //タスクの完了・未完了のトグル
+  const handleTaskStatus = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTasks((prevTasks) => {
+      const newTasks = prevTasks.map((task) => {
+        const selectedTaskId = Number(e.target.value);
+        if (task.id === selectedTaskId) {
+          return { ...task, done: !task.done };
+        }
+        return task;
+      });
+      return newTasks;
+    });
+  };
+
+  return (
+    <Box sx={{ flexGrow: 1, maxWidth: 500, mx: "auto" }}>
+      <Grid container spacing={0}>
+        <Grid item xs={12} md={12}>
+          <Typography sx={{ mt: 4, mb: 2 }} variant="h6" component="div">
+            Please Add Your Task!! (Task limit is 10)
+          </Typography>
+          <form onSubmit={handleSubmit}>
+            <Paper
+              sx={{
+                p: "2px 4px",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <InputBase
+                sx={{ ml: 1, flex: 1 }}
+                placeholder="New Task"
+                inputProps={{ "aria-label": "new task" }}
+                value={newTask}
+                onChange={(e) => {
+                  setNewTask(e.target.value);
+                }}
+              />
+              <IconButton
+                type="button"
+                sx={{ p: "10px" }}
+                aria-label="search"
+                onClick={handleSubmit}
+              >
+                <AddIcon />
+              </IconButton>
+            </Paper>
+            <List>
+              {tasks.map((task) => {
+                return (
+                  <ListItem key={task.id}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={task.done}
+                          value={task.id}
+                          onChange={handleTaskStatus}
+                        />
+                      }
+                      label={task.content}
+                      sx={{
+                        textDecoration: task.done ? "line-through" : "auto",
+                        wordBreak: "break-word",
+                        flex: 1,
+                        mr: 0,
+                      }}
+                    />
+                    <Box sx={{ ml: "auto", mr: "4px" }}>
+                      <IconButton
+                        edge="end"
+                        aria-label="delete"
+                        onClick={() => {
+                          setDeletedTaskId(task.id);
+                          handleDelete(task.id);
+                        }}
+                        disabled={task.id === deletedTaskId}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  </ListItem>
+                );
+              })}
+            </List>
+          </form>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+};
+
+export default Example;
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  const res = await axios.get(`${process.env.HOST}/tasks`, {
+    headers: { "Accept-Encoding": "gzip,deflate,compress" },
+  });
+
+  const data = res.data;
+  return {
+    props: {
+      staticTasks: data,
+    },
+  };
+};
+
+```
+
+:::
+
+### Render で Nextjs のコードをデプロイ
+
+最後に作成した Nextjs のコードを Render にデプロイします。Nestjs の場合とほぼ同じです。大まかには以下のような流れです。
+
+1. Web Service の作成
+2. 連携先の GitHub リポジトリを選択
+3. Build Command の設定
+
+```
+yarn && yarn build
+```
+
+4. Start コマンドの設定
+
+```
+yarn start
+```
+
+5. 環境変数の設定
+   - キー：HOST
+   - バリュー：デプロイした Nestjs の URL
+
+として「Create Web Service」をクリックすればデプロイされます。これで全ての工程が完了しました！
 
 # まとめ
 
