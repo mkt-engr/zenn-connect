@@ -66,8 +66,6 @@ ToDo アプリを作成するにあたって主に利用したライブラリと
 
 PostgreSQL のバージョンを 14 にしたのは Heroku で対応しているバージョンが 14 だったので Render でもなんとなく 14 にしました。Render では 15 まで使うことができます。
 
-余談ですが MUI のバージョンが v5 になってからはじめて触りましたが v4 より使いやすくなっているような気がしました。
-
 # Render とは
 
 :::message
@@ -88,8 +86,16 @@ Render は Web アプリケーション、ウェブサイト、データベー�
 
 ## Render のメリット
 
-//TODO:いくつ？
-Render を使うメリットをいくつか紹介します。
+ドキュメントを読んだり、アプリを作っていく中で感じた Render を使うメリットを 5 つ紹介します。
+
+### 守備範囲の広さ
+
+まず対応言語が Node、Python、Ruby、Elixir、Go、Rust,PHP と人気どころは抑えられているのではないでしょうか？。また Docker、静的なサイトの作成、クーロン、バックグラウンドジョブなどにも対応しているので特別なことをしなければ大体の Web サービスが Render だけで作れそうです。
+![Quick Starts](/images/todo-app-with-render/quick-start.png)
+
+### ダウンタイムなしでのデプロイ
+
+ビルドが失敗してもアプリケーションがダウンすることはないと Render は謳っています。
 
 ### GitHub との連携機能
 
@@ -101,10 +107,18 @@ GitHub（や GitLab）と連携して特定のブランチ（main ブランチ�
 
 2. ダッシュボードから特定のコミットの状態にロールバックできる
 
-まず 1 つ目の「コミットメッセージに特定の文言を入れることで自動デプロイをスキップできる」の方ですが Git のコミットメッセージに` [<KEYWORD> skip]` か `[skip <KEYWORD>] `が含まれていると自動デプロイがスキップされます。`KEYWORD`は`render`、`deploy`、`cd`の 3 つのうちの 1 つを使ってください。たとえばコミットメッセージを`[render skip] Update README`として GitHub にプッシュすれば自動デプロイはスキップされます。
+まず 1 つ目の「コミットメッセージに特定の文言を入れることで自動デプロイをスキップできる」の方ですが Git のコミットメッセージに` [<KEYWORD> skip]` か `[skip <KEYWORD>] `が含まれていると自動デプロイがスキップされます。`KEYWORD`は
+
+- `render`
+- `deploy`
+- `cd`
+
+の 3 つのうちの 1 つを使ってください。たとえばコミットメッセージを`[render skip] Update README`として GitHub にプッシュすれば自動デプロイはスキップされます。
 自動デプロイがスキップされたかどうかはダッシュボードからも確認できます。`Deploy skipped for ...`とありますね。
 ![自動デプロイのスキップ](/images/todo-app-with-render/skip-auto-deploy.png)
 README.md だけを更新してデプロイの必要がない時に使えそうですね。
+
+https://render.com/docs/deploys
 
 次に 2 つ目の「ダッシュボードから特定のコミットの状態にロールバックできる」の方ですが`Rollback to this deploy`をクリックすればロールバックできます。間違えてデプロイしてしまった時に特定の時点の状態へ戻したい時に使えますね。
 ![特定のコミットの状態にロールバック](/images/todo-app-with-render/rollback-deploy.png)
@@ -115,17 +129,13 @@ Heroku で DB に IP 制限をかけようと思うと割と高額なエンタ�
 ![DBへのアクセス制限](/images/todo-app-with-render/db-access-control.png)
 IP 制限もダッシュボードから簡単に行えます。自分の環境からのみアクセスできるようにしたい時は`Use my IP address`をクリックすれば自動で入力されるので地味に嬉しい機能です。
 
-### HTTP2 で通信しているとか書く？
+### インフラのコード化
 
-TODO:HTTP2 で通信しているとか書く？
-
-### a
-
-- render.yaml で IaC として管理できる
+いわゆる Infrastructure as Code(IaC) が実現できます。render.yaml を作成して GitHub にプッシュするとその設定を読み込みインフラを構築してくれるようです。
 
 ## Render のデメリット
 
-デメリットもいくつかあるのでこちらで紹介します。
+デメリットも感じたので 3 つ紹介します。
 
 ### デプロイが割と遅い
 
@@ -145,14 +155,21 @@ TODO:HTTP2 で通信しているとか書く？
 
 です。15 分アクセスがないとそのアプリは止まっちゃうってことですね。リクエストが来たら再起動して最大 30 秒の応答遅延があると書いてますがそんなに短くないです。少なくとも数分は待つ必要がありました。
 
+https://render.com/docs/free#free-web-services
+
+Render で対応しているリージョンが
+
+- Oregon, USA
+- Frankfurt, Germany
+- Ohio, USA
+- Singapore
+
+の 4 つで日本に近いところがないのが遅延の原因かもしれません。
+
 ### npm が使えない(かもしれない)
 
 デメリットでもないですが私が操作した限り Render のダッシュボードで指定するビルドコマンドとスタートコマンドに npm が使えませんでした。
 ビルドコマンドに関するドキュメントには例として yarn が使われていましたが npm が使えないとは書いてなかったのでもしかしたら npm も使えるかもしれません。
-
-### 日本に近いリージョンがない
-
-TODO:
 
 # ToDo アプリ作成
 
@@ -177,7 +194,11 @@ TODO:
 
 ## バックエンド編(Nestjs)
 
-言語のフレームワークは NestJS、OR マッパーは Prisma[^1]を使います。
+言語のフレームワークは [Nestjs](https://nestjs.com/)、OR マッパーは [Prisma](https://www.prisma.io/)を使います。
+
+バックエンドの構築はこちらを参考にしました。
+
+https://www.prisma.io/blog/nestjs-prisma-rest-api-7D056s1BmOL0
 
 ### テンプレート作成
 
@@ -497,7 +518,7 @@ yarn start:dev
 
 ## フロントエンド編(Nextjs)
 
-言語のフレームワークは Nextjs、HTTP クライアントは Axios、CSS フレームワークは MUI を使います。
+言語のフレームワークは [Nextjs](https://nextjs.org/)、HTTP クライアントは [Axios](https://axios-http.com/)、CSS フレームワークは [MUI](https://mui.com/) を使います。
 
 ### テンプレート作成
 
@@ -800,24 +821,27 @@ yarn start
 ```
 
 5. 環境変数の設定
-   バックエンドへリクエストするために HOST の値を設定します。
+   バックエンドへリクエストするために必要な HOST の値を設定します。
    - キー：HOST
    - バリュー：デプロイしたバックエンドのプロジェクトの URL
 
-として「Create Web Service」をクリックすればデプロイされます。これですべての工程が完了しました！
+として「Create Web Service」をクリックすればデプロイされます。これで ToDo アプリ作成のすべての工程が完了しました！
 
 # まとめ
 
-# 参考
+2022 年 11 月 28 日で Heroku の無料プランが終了してしまいました。これをを機に ToDo アプリの作成を通じて Render を触ってみました。
 
-[^1]: Prisma の[公式ドキュメント](https://www.prisma.io/)
+メリット、デメリットは以下の通りです。
 
-自動デプロイスキップの話
-https://render.com/docs/deploys
+- メリット
+  - 守備範囲の広さ
+  - ダウンタイムなしでのデプロイ
+  - GitHub との連携機能
+  - 無料プランでも PostgreSQL に IP 制限ができる
+  - インフラのコード化
+- デメリット
+  - デプロイが割と遅い
+  - 無料プランのインスタンスはアクセスがないと停止する
+  - npm が使えない（かもしれない）
 
-無料の WebService は 15 分使用されないとインスタンスが停止する件
-https://render.com/docs/free#free-web-services
-
-```
-
-```
+デプロイが遅かったりデメリットはありますが、GUI も見やすくてできることも多いので個人的には好印象です。日本にもリージョンを作ってくれることを切に願っています笑
