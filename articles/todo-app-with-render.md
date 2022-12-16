@@ -18,7 +18,7 @@ published: false
 
 Heroku はアプリケーションをホスティングする PaaS として有名ですが残念なことに 2022 年 11 月 28 日で無料プランが終了してしまいました。現在の仕事には影響はないものの今後どんな PaaS が来るのかなといろいろ探しているところ Render を見つけました。
 
-この記事では簡単な ToDo アプリを作成して Render にデプロイする中でメリット・デメリットがお話しできればと思います。
+この記事では簡単な ToDo アプリを作成して Render にデプロイする過程で感じたメリット・デメリットがお話しできればと思います。
 
 ## 作成した ToDo アプリ
 
@@ -91,7 +91,7 @@ Render は Web アプリケーション、ウェブサイト、データベー�
 ### 守備範囲の広さ
 
 まず対応言語が Node、Python、Ruby、Elixir、Go、Rust,PHP と人気どころは抑えられているのではないでしょうか？。また Docker、静的なサイトの作成、クーロン、バックグラウンドジョブなどにも対応しているので特別なことをしなければ大体の Web サービスが Render だけで作れそうです。
-![Quick Starts](/images/todo-app-with-render/quick-start.png)
+![Quick Starts](/images/todo-app-with-render/render/quick-start.png)
 
 ### ダウンタイムなしでのデプロイ
 
@@ -115,18 +115,18 @@ GitHub（や GitLab）と連携して特定のブランチ（main ブランチ�
 
 の 3 つのうちの 1 つを使ってください。たとえばコミットメッセージを`[render skip] Update README`として GitHub にプッシュすれば自動デプロイはスキップされます。
 自動デプロイがスキップされたかどうかはダッシュボードからも確認できます。`Deploy skipped for ...`とありますね。
-![自動デプロイのスキップ](/images/todo-app-with-render/skip-auto-deploy.png)
+![自動デプロイのスキップ](/images/todo-app-with-render/render/skip-auto-deploy.png)
 README.md だけを更新してデプロイの必要がない時に使えそうですね。
 
 https://render.com/docs/deploys
 
 次に 2 つ目の「ダッシュボードから特定のコミットの状態にロールバックできる」の方ですが`Rollback to this deploy`をクリックすればロールバックできます。間違えてデプロイしてしまった時に特定の時点の状態へ戻したい時に使えますね。
-![特定のコミットの状態にロールバック](/images/todo-app-with-render/rollback-deploy.png)
+![特定のコミットの状態にロールバック](/images/todo-app-with-render/render/rollback-deploy.png)
 
 ### 無料プランでも PostgreSQL に IP 制限ができる
 
 Heroku で DB に IP 制限をかけようと思うと割と高額なエンタープライズプランを契約しないといけません。Render では無料プランでも IP 制限ができるのは嬉しいですね。
-![DBへのアクセス制限](/images/todo-app-with-render/db-access-control.png)
+![DBへのアクセス制限](/images/todo-app-with-render/render/db-access-control.png)
 IP 制限もダッシュボードから簡単に行えます。自分の環境からのみアクセスできるようにしたい時は`Use my IP address`をクリックすれば自動で入力されるので地味に嬉しい機能です。
 
 ### インフラのコード化
@@ -182,15 +182,15 @@ Render で対応しているリージョンが
 ## データベース編(Postgres)
 
 ダッシュボードのヘッダーにある「New+」から「PostgreSQL」を選択します。
-![ダッシュボード](/images/todo-app-with-render/create-db-01.png)
+![ダッシュボード](/images/todo-app-with-render/database/create-db-01.png)
 
 次にデータベースの名前などを入力し、スペックを選択して「Create Database」をクリックするとデータベースが作成されます。
-![DBプラン設定](/images/todo-app-with-render/create-db-02.png)
+![DBプラン設定](/images/todo-app-with-render/database/create-db-02.png)
 
 なお、無料プランではデータベースは 1 つしか作れないので気をつけてください。
 
 データベースが作成できたらダッシュボードの Info の欄から接続情報を確認してください。「Internal Database URL」の値は次のバックエンド編で使います。
-![DB接続情報](/images/todo-app-with-render/db-info.png)
+![DB接続情報](/images/todo-app-with-render/database/db-info.png)
 
 ## バックエンド編(Nestjs)
 
@@ -296,11 +296,12 @@ npx prisma migrate dev --name "init"
 npx prisma studio
 ```
 
-![Prisma Studio](/images/todo-app-with-render/prisma-studio.png)
+![Prisma Studio](/images/todo-app-with-render/backend/prisma-studio.png)
 
 Task が作成されていれば OK です。レコードが入っていなければ 5 ではなく 0 と表示されています。
 
 次にレコードを 2 件追加するコードを作成します。
+
 :::details seed.ts
 
 ```ts:prisma/seed.ts
@@ -361,7 +362,7 @@ npx prisma db seed
 ```
 
 コマンドを実行して Prisma Studio で以下のようにレコードが 2 件追加されていることを確認してください。
-![レコード追加後Prisma Studioで確認](/images/todo-app-with-render/prisma-studio-after-seed.png)
+![レコード追加後Prisma Studioで確認](/images/todo-app-with-render/backend/prisma-studio-after-seed.png)
 
 最後に Prisma のサービスを作成します。Prisma のサービスでは Prisma クライアントインスタンスの作成とデータベースへの接続を行います。
 
@@ -484,16 +485,16 @@ yarn start:dev
 ### Render で Nestjs のコードをデプロイ
 
 作成した Nestjs のコードを Render にデプロイします。Render のダッシュボードから「Web Service」を作成します。
-![Web Serviceの作成](/images/todo-app-with-render/new-web-service.png)
+![Web Serviceの作成](/images/todo-app-with-render/backend/new-web-service.png)
 
 次に「Connect GitHub」をクリックして Render と GitHub を連携します。
-![GitHubとの連携](/images/todo-app-with-render/connect-repository.png)
+![GitHubとの連携](/images/todo-app-with-render/backend/connect-repository.png)
 
 次にデプロイのための設定を行います。
-![Nestのデプロイのその1](/images/todo-app-with-render/deploy-nest-01.png)
+![Nestのデプロイのその1](/images/todo-app-with-render/backend/deploy-nest-01.png)
 Region は日本から一番近い「Singapore（Southeast Asia）」を選択しました（日本のリージョンもいつか出てほしいなあ）。
 
-![Nestのデプロイのその2](/images/todo-app-with-render/deploy-nest-02.png)
+![Nestのデプロイのその2](/images/todo-app-with-render/backend/deploy-nest-02.png)
 Nestjs で作成したので Environment は`Node`を選択選択してください。
 Build Command はマイグレーションとデータの登録を行うので少し長くなりますが
 
@@ -509,7 +510,7 @@ yarn start:dev
 ```
 
 とします。これらのコマンドはすべて package.json で設定した script を拝借しています。最後に Advanced のところで環境変数を設定します。
-![Nestのデプロイのその3](/images/todo-app-with-render/deploy-nest-03.png)
+![Nestのデプロイのその3](/images/todo-app-with-render/backend/deploy-nest-03.png)
 
 - キー：`DATABASE_URL`
 - バリュー：データベースを作成した時に生成された接続情報の「Internal Database URL」の値
