@@ -682,7 +682,6 @@ const Example: NextPage<Props> = ({ staticTasks }) => {
     const options: AxiosRequestConfig = {
       url: `api/task/${id}`,
       method: "DELETE",
-      // headers: { "Accept-Encoding": "gzip,deflate,compress" },
     };
     const { data } = await axios(options);
     setTasks((prev) => {
