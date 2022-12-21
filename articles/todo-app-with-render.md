@@ -3,7 +3,7 @@ title: "Herokuの代替となり得るPaaS「Render」で簡単なToDoアプリ�
 emoji: "🐈"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["Render", "TypeScript", "Nextjs", "Nestjs", "Postgres"]
-published: false
+published: true
 ---
 
 # はじめに
