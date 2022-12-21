@@ -9,7 +9,7 @@ published: true
 # はじめに
 
 :::message
-この記事は[Sun\* Advent Calendar 2022](https://adventar.org/calendars/8211)の 9 日目の記事です。
+この記事は[Sun\* Advent Calendar 2022](https://adventar.org/calendars/8211)の 21 日目の記事です。
 :::
 
 株式会社 Sun Asterisk に所属する森真輝人です。社内では Web エンジニアとして働いていて Heroku を用いたシステム開発を行っています。
