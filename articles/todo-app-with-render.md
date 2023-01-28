@@ -3,13 +3,13 @@ title: "Herokuの代替となり得るPaaS「Render」で簡単なToDoアプリ�
 emoji: "🐈"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["Render", "TypeScript", "Nextjs", "Nestjs", "Postgres"]
-published: false
+published: true
 ---
 
 # はじめに
 
 :::message
-この記事は[Sun\* Advent Calendar 2022](https://adventar.org/calendars/8211)の 9 日目の記事です。
+この記事は[Sun\* Advent Calendar 2022](https://adventar.org/calendars/8211)の 21 日目の記事です。
 :::
 
 株式会社 Sun Asterisk に所属する森真輝人です。社内では Web エンジニアとして働いていて Heroku を用いたシステム開発を行っています。
@@ -22,6 +22,7 @@ Heroku はアプリケーションをホスティングする PaaS として有�
 
 ## 作成した ToDo アプリ
 
+https://example-service-next.onrender.com/
 アプリは[こちら](https://example-service-next.onrender.com/)にデプロイしました。アプリの見た目はこんな感じです（ほんとに簡素ですね）。その代わりフロントエンド、バックエンド、データベースはすべて無料でホスティングできています。無料プランで作成したので 15 分アクセスがないとサーバが停止します。停止した状態でアクセスするとサーバの再起動に時間がかかってなかなかアプリが表示されないので気を付けてください。
 ![ToDoアプリの画面](/images/todo-app-with-render/todo-app.png)
 
