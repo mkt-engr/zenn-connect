@@ -8,7 +8,7 @@ published: false
 
 # 概要
 :::message alert
-今回紹介している方法はPreview機能なのでご利用の際は自己責任でお願いいたします。
+今回紹介している方法は2023年1月29日（日）時点でPreview機能なのでご利用の際は自己責任でお願いいたします。
 :::
 NestJSでバッチが複数ありそれらのバッチの起動時間を異なるスキーマで同名のテーブルで持つ必要が出てきた
 
@@ -135,6 +135,9 @@ docker-composeをバックグラウンドで実行したい場合は`-d`をつ�
 ## 異なるスキーマで同一のテーブル名のデータを操作する
 
 
+# マルチスキーマの最新情報について
+マルチスキーマの最新情報についてはこちらのGitHubのIssueをご確認ください。
+https://github.com/prisma/prisma/issues/15077
 # 参考文献
 https://www.prisma.io/blog/nestjs-prisma-rest-api-7D056s1BmOL0
 https://www.prisma.io/docs/guides/database/multi-schema
