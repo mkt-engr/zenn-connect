@@ -13,14 +13,14 @@ published: false
 :::
 NestJS でバッチが複数ありそれらのバッチの起動時間を異なるスキーマで同名のテーブルで持つ必要が出てきた
 
-最終的に作成したテーブルの状態を DBeaver で確認したものが以下の画像です。
+この記事で最終的に作成したテーブルの状態を DBeaver で確認したものが以下の画像です。
 ![DBeaverで複数のスキーマに同一名のテーブルがあることを確認できる画像](/images/prisma-multi-schema/multi-schema-same-table-name.png)
 
 prisma.schema を複数作って Prisma インスタンスを複数作成することで複数のスキーマのテーブル扱えるようにした記事を書いている方はいらっしゃいました。しかし NestJS で Prisma インスタンスをシングルトンとして複数作成する方法がわからなかったので今回の方法でマルチスキーマに対応しました。
 （もし今回の Preview 機能を使わなくてもマルチスキーマに対応できる方法があればコメントに書いていただきたいです！）
 
 GitHub のリポジトリはこちらです。
-https://github.com/mkt-engr/play-prisma/tree/zenn-2022-0129
+https://github.com/mkt-engr/play-prisma/tree/zenn-2023-0129
 
 ## 主に利用したライブラリとそのバージョン
 
