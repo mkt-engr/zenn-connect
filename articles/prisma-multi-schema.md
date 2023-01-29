@@ -3,7 +3,7 @@ title: "NestJSでPrismaを用いて複数のスキーマで同一のテーブル
 emoji: "🦁"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [NestJS, Prisma]
-published: false
+published: true
 ---
 
 # 概要
