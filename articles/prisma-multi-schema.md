@@ -11,7 +11,7 @@ published: false
 :::message alert
 今回紹介している方法は 2023 年 1 月 29 日（日）時点で Preview 機能なのでご利用の際は自己責任でお願いいたします。
 :::
-NestJS でバッチが複数ありそれらのバッチの起動時間を異なるスキーマで同名のテーブルで持つ必要が出てきた
+個人的に開発しているアプリケーションではバッチが複数ありそれらのバッチの起動時間を異なるスキーマで同名のテーブルで持つ必要が出てきました。今回のアプリケーションではバックエンドにNestJSとORMとしてPrismaを用いていました。今回の要望に応えるため、どのような手順を踏んだのかを記事にしました。
 
 この記事で最終的に作成したテーブルの状態を DBeaver で確認したものが以下の画像です。
 ![DBeaverで複数のスキーマに同一名のテーブルがあることを確認できる画像](/images/prisma-multi-schema/multi-schema-same-table-name.png)
@@ -67,7 +67,7 @@ model BatchExecutionTime02 {
 
 ```
 
-まずは Prisma に複数のスキーマに対応させたいので`client`セクションのところでその設定を行います。
+まずは Prisma に複数のスキーマに対応させたいので`client`セクションでその設定を行います。
 
 ```js
 generator client {
@@ -109,7 +109,7 @@ prisma の場合`@@map()`が記載されていない場合は model がそのま
 - Prisma を用いてデータベースを操作するサービスを作成する
 - 上記のスキーマを用いて update の操作をする
 
-ところまで書きます。結論だけ知りたい方はこのセクションまで読めば問題ないです！
+ところまで書きます。結論だけ知りたい方は次以降のセクションを読む必要はないです！
 
 # 環境構築
 
@@ -155,8 +155,9 @@ docker-compose をバックグラウンドで実行したい場合は`-d`をつ�
 
 ## マイグレーションの実行と初期データ投入する
 
+マイグレーションを実行を行いテーブルを作成し、作成されたテーブルに初期データを投入します。
 ### マイグレーションの実行
-結論のところでも書いた通りschema.prismaでモデルを作成します。
+結論でも書いた通りschema.prismaでモデルを作成します。
 ```js:prisma/schema.prisma
 generator client {
   provider        = "prisma-client-js"
@@ -185,7 +186,7 @@ model BatchExecutionTime02 {
   @@schema("schema02") //schema02スキーマにマッピングする
 }
 ```
-モデルが作成できたら移管コマンドを実行してマイグレーションを実行します。
+モデルが作成できたら以下のコマンドを実行してマイグレーションを実行します。
 ```
 npx prisma migrate dev --name "init"
 ```
@@ -438,6 +439,36 @@ PostmanなどのAPIクライアントで作成したAPIをキックして以下�
 ![PostmanでAPIをキックする](/images/prisma-multi-schema/execute-upsert-batch-at-postman.png)
 
 # まとめ
+
+schema.prismaに以下のような記述をすれba
+複数のスキーマで同一のテーブル名を使うことができる。
+
+- 複数のスキーマを使う
+```js
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"] //複数スキーマを扱う
+}
+```
+
+- スキーマの指定
+```
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["schema01", "schema02"] //スキーマの種類の設定
+}
+```
+- モデルとテーブルのマッピング
+```js
+model BatchExecutionTime01 {
+  id       Int      @id @default(autoincrement())
+  updateAt DateTime @default(now())
+
+  @@map("batch_execution_time") //batch_execution_timeテーブルにマッピングする
+  @@schema("schema01") //schema01スキーマにマッピングする
+}
+```
 # マルチスキーマの最新情報について
 
 マルチスキーマの最新情報についてはこちらの GitHub の Issue をご確認ください。
