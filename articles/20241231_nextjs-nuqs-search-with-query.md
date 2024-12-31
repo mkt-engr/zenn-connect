@@ -52,14 +52,18 @@ export const searchParamsCache = createSearchParamsCache({
 });
 ```
 
-## 全体感
+## 全体感（サーバーコンポーネント）
 
-以下に 2 種類のコンポーネントを作成します。API のコールはサーバーコンポーネントで行います。
+以下に 2 種類のコンポーネントをインポートします。
 
 - 検索フォームのコンポーネント
 - 検索結果を表示するコンポーネント
 
+API のコールはこのサーバーコンポーネントで行います。先ほど作成した`searchParamsCache`を用いて検索クエリを型安全に取得することができています。
+
 ```tsx
+import { type SearchParams } from "nuqs/server";
+
 type Props = {
   /** 検索クエリを含む検索パラメータ */
   searchParams: Promise<SearchParams>;
@@ -67,7 +71,7 @@ type Props = {
 
 /** 検索フォームと検索結果を表示するコンポーネント */
 export default async function Page({ searchParams }: Props) {
-  // 検索クエリのパース
+  // 検索クエリのパース（型安全になっている！）
   const { q } = await searchParamsCache.parse(searchParams);
 
   // 検索クエリをもとに商品を取得
@@ -115,9 +119,9 @@ export const Search = () => {
 なお`useHandleSubmit`の中身は下記のようになっており、以下の役割を果たしています。
 
 - フォームのデフォルトの挙動（フォームの送信）を塞ぐ
-- （サーバコンポーネントで検索を行うために）`router.refresh()`を実行する（★）
+- （サーバーコンポーネントで検索を行うために）`router.refresh()`を実行する（★）
 
-とくに 2 つ目の（★）が重要です。これによりクライアントコンポーネントで更新したクエリパラメタを用いてサーバコンポーネントで検索を行っています。
+とくに 2 つ目の（★）が重要です。これによりクライアントコンポーネントで更新したクエリパラメタを用いてサーバーコンポーネントで検索を行っています。
 
 ```tsx
 export const useHandleSubmit = () => {
