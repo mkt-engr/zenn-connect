@@ -1,9 +1,9 @@
-title: "本のタイトル"
-summary: "本の紹介文"
-topics: ["markdown", "zenn", "react"] # トピック（5つまで）
-published: true # falseだと下書き
+title: "フロントエンドでclean architectureを実践する"
+summary: "フロントエンドでclean architectureを実践するためのチュートリアル"
+topics: ["react", "typescript", "clean architecture", "vitest"]
+published: false
 price: 0 # 有料の場合200〜5000
+# 本に含めるチャプターを順番に並べましょう
 chapters:
-  - example1 # チャプター1
-  - example2 # チャプター2
-  - example3 # チャプター3
+  - 1_introduction
+  - conclusion
