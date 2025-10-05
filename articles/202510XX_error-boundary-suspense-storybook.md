@@ -408,9 +408,7 @@ describe("fetchProducts", () => {
 
 TODO:商品一覧の画像を貼る。検索ボックスと一覧の表示がわかるように赤枠で囲う。
 
-Shop コンポーネントに含まれる`<ProductList>`コンポーネントを実装します。
-
-上部はテキスト入力欄で、そこに入力された内容に基づいて検索を行い、下部に表示します。
+上部はテキスト入力欄で、そこに入力された内容に基づいて検索を行い、下部に結果を表示します。
 
 ```tsx
 export const Shop = () => {
@@ -428,11 +426,8 @@ export const Shop = () => {
 TODO:useDeferredValue の公式サイトのリンクを貼る
 
 本筋とは関係ないですが、入力するたびに一瞬ローディング画面が表示されるチラつきを防ぐために、React v19 から登場した`useDeferredValue`を利用しています。
-useDeferredValue は、UI の更新を遅延させることで、ユーザーの入力がスムーズに見えるようにします。
-query !== deferredQuery の間は「検索中」と表示し、バックグラウンドで新しい検索結果を取得しています。
-
-TODO:gif 載せる？
-API をコールして商品一覧を表示するコンポーネントは`<Result />`コンポーネント分離しています。
+`useDeferredValue`は、UI の更新を遅延させることで、ユーザーの入力がスムーズに見えるようにします。
+`query !== deferredQuery`の間は「検索中」と表示し、バックグラウンドで新しい検索結果を取得しています。
 
 ```tsx
 export const ProductList = () => {
@@ -462,9 +457,9 @@ export const ProductList = () => {
 `<Result>`コンポーネントは、実際の API 呼び出しとデータ表示を担当します。
 `<ProductList>`から受け取った`query`を使って商品を検索します。
 
-この設計のポイント：
+**この設計のポイント：**
 
-- `<Result>`コンポーネントが ErrorBoundary と Suspense を持つことで、このコンポーネント単体でテストや Storybook が作成できます
+- `<Result>`コンポーネントが`<ErrorBoundary>`と`<Suspense>`を持つことで、このコンポーネント単体でテストやStorybookが作成できます
 - 実際のデータ取得と表示ロジックは`<Inner>`コンポーネントに分離し、責任を明確化しています
 - エラーやローディングの処理を`<Inner>`から分離することで、`<Inner>`は「データをどう表示するか」だけに集中できます
 
@@ -513,13 +508,12 @@ const Inner: FC<Props> = ({ query }) => {
 };
 ```
 
-### API をコールするカスタムフック
+### カスタムフック
 
-API をコールするカスタムフック
-TanStack Query の useSuspenseQuery を使っています。
-useSuspenseQuery は、ローディング中は自動的に親の`<Suspense>`の fallback を表示し、
-エラー時は自動的に親の`<ErrorBoundary>`の fallback を表示します。
-そのため、コンポーネント側でローディングやエラーの状態を管理する必要がなく、data のみを返しています。
+TanStack Queryの`useSuspenseQuery`を使っています。
+`useSuspenseQuery`は、ローディング中は自動的に親の`<Suspense>`のfallbackを表示し、
+エラー時は自動的に親の`<ErrorBoundary>`のfallbackを表示します。
+そのため、コンポーネント側でローディングやエラーの状態を管理する必要がなく、`data`のみを返しています。
 
 ```ts
 type Args = {
