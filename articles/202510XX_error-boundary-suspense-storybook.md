@@ -13,6 +13,8 @@ published: false
 
 - "Error Boundary と Suspense の配置で決まる、
   コンポーネントの開発体験とユーザー体験"
+- "Error Boundary と Suspense の配置で決まる、
+  コンポーネントの開発体験とユーザー体験"
 
 - "エラー境界の局所化が生む 3 つの価値 - テスト・並列開発・UX 向上を実現する React 設計パターン ―"
 
@@ -459,7 +461,7 @@ export const ProductList = () => {
 
 **この設計のポイント：**
 
-- `<Result>`コンポーネントが`<ErrorBoundary>`と`<Suspense>`を持つことで、このコンポーネント単体でテストやStorybookが作成できます
+- `<Result>`コンポーネントが`<ErrorBoundary>`と`<Suspense>`を持つことで、このコンポーネント単体でテストや Storybook が作成できます
 - 実際のデータ取得と表示ロジックは`<Inner>`コンポーネントに分離し、責任を明確化しています
 - エラーやローディングの処理を`<Inner>`から分離することで、`<Inner>`は「データをどう表示するか」だけに集中できます
 
@@ -510,9 +512,11 @@ const Inner: FC<Props> = ({ query }) => {
 
 ### カスタムフック
 
-TanStack Queryの`useSuspenseQuery`を使っています。
-`useSuspenseQuery`は、ローディング中は自動的に親の`<Suspense>`のfallbackを表示し、
-エラー時は自動的に親の`<ErrorBoundary>`のfallbackを表示します。
+商品データを取得する`useProducts`カスタムフックを実装します。
+
+TanStack Query の`useSuspenseQuery`を使っています。
+`useSuspenseQuery`は、ローディング中は自動的に親の`<Suspense>`の fallback を表示し、
+エラー時は自動的に親の`<ErrorBoundary>`の fallback を表示します。
 そのため、コンポーネント側でローディングやエラーの状態を管理する必要がなく、`data`のみを返しています。
 
 ```ts
@@ -575,6 +579,6 @@ TODO: 参考にしているページを明記する
 
 ### customRender
 
-###　 TestProvider
+### TestProvider
 
 ## 参考
