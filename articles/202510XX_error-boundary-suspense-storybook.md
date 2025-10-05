@@ -1,6 +1,6 @@
 ---
-title: "エラーとローディングの局所化、テスト、コンポーネントカタログを意識した React コンポーネント設計
-― Dummy API を使って Vitest と Storybook を実践しながら、ErrorBoundary / Suspense の配置を学ぶ ―"
+title: "Error Boundary と Suspense の配置で決まる、
+  コンポーネントの開発体験とユーザー体験"
 emoji: "😊"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [React]
@@ -11,13 +11,13 @@ published: false
 
 タイトルの案
 
-"Error Boundary と Suspense の配置で決まる、
-コンポーネントの開発体験とユーザー体験"
+- "Error Boundary と Suspense の配置で決まる、
+  コンポーネントの開発体験とユーザー体験"
 
-または
+- "エラー境界の局所化が生む 3 つの価値 - テスト・並列開発・UX 向上を実現する React 設計パターン ―"
 
-"エラー境界の局所化が生む 3 つの価値
-― テスト・並列開発・UX 向上を実現する React 設計パターン ―"
+- "エラーとローディングの局所化、テスト、コンポーネントカタログを意識した React コンポーネント設計
+  ― Dummy API を使って Vitest と Storybook を実践しながら、ErrorBoundary / Suspense の配置を学ぶ ―"
 
 ## はじめに
 
@@ -90,13 +90,13 @@ TODO:コンポーネントの名前を画像に含める
 ### よくない例
 
 Error Boundary や Suspense を知った当初は便利だなーと思いつつ、使い方がよくわかっていませんでした。
-具体的には下記のようにコンポーネントのトップの要素に**のみ**`<ErrorBoundary>`と`<Suspense>` をラップする形です。
+具体的には下記のように、コンポーネントのトップの要素に**のみ**`<ErrorBoundary>`と`<Suspense>` をラップする形をよく採用していました。
 
 ```tsx
 export const CheapShop = () => {
   return (
-    <ErrorBoundary fallback={<div>エラーが発生しました</div>}>
-      <Suspense fallback={<div>読み込み中...</div>}>
+    <ErrorBoundary fallback={<div>全画面エラーが発生しました</div>}>
+      <Suspense fallback={<div>全画面読み込み中...</div>}>
         <div>
           <h1>Super coolなECサイト</h1>
           <Cart />
@@ -120,16 +120,21 @@ export const CheapShop = () => {
 例えば、商品一覧とカートのデータ取得は完了していても、
 今日の名言の API だけが遅い場合、ユーザーは何も操作できません。
 
+TODO:最新の Chromatic の URL を貼る
+[全画面ローディングの Story]()
+
 #### 1 つのエラーで全機能が使用不可になる
 
 優先度の低い「今日の名言」の API がエラーになっただけで、
 商品一覧もカートも含めた画面全体が「エラーが発生しました」になります。
 
-ユーザーから見ると：
+TODO:最新の Chromatic の URL を貼る
+[全画面エラーの Story]()
 
-- 本来使えるはずの機能（商品閲覧・カート）が使えない
+ユーザーから見ると下記のような不便さがあります。
+
+- 本日の名言でエラーが発生すると、本来使えるはずの機能（商品閲覧・カート）が使えない
 - どこでエラーが起きたのか分からない
-- EC サイトとして致命的な体験
 
 #### コンポーネント単体のテスト・Storybook が書きにくい
 
@@ -138,7 +143,7 @@ export const CheapShop = () => {
 ローディング状態やエラー状態を再現しにくくなります。
 
 同様に Storybook でも、`<Cart />`のローディング表示やエラー表示を
-独立して確認することが困難です。
+独立して確認することができなくなります。
 
 ## 改善案：ErrorBoundary / Suspense の局所化設計
 
