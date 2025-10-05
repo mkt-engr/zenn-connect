@@ -17,13 +17,12 @@ published: false
 
 ## 題材
 
-下記の画像のような
+下記の画像のような下記の 3 つで構成された EC サイトを題材とします。
 
 - 商品カート
 - 商品一覧
 - 今日の名言
 
-の 3 つで構成された EC サイトを題材とします。
 それぞれのセクションでは異なる API をコールして、カート・商品・今日の名言を取得しています。
 
 :::message
@@ -37,9 +36,11 @@ TODO:コンポーネントの名前を画像に含める
 
 なお、ダミーの API として[DummyJSON](https://dummyjson.com/docs)を利用しています。
 
-## よくない ErrorBoundary と Suspense の使い方（自分の実例）
+## よくない ErrorBoundary と Suspense の使い方と問題点（自分の実例）
 
-### 問題点
+### よくない例
+
+### デメリット
 
 ## 改善案：ErrorBoundary / Suspense の局所化設計
 
