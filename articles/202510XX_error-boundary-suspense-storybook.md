@@ -399,7 +399,7 @@ describe("fetchProducts", () => {
 });
 ```
 
-### コンポーネント
+### コンポーネントと API をコールするカスタムフック
 
 TODO:商品一覧の画像を貼る。検索ボックスと一覧の表示がわかるように赤枠で囲う。
 
@@ -517,7 +517,7 @@ type Args = {
 };
 
 export const useProducts = ({ query }: Args) => {
-  const { data, isPending, error } = useSuspenseQuery({
+  const { data } = useSuspenseQuery({
     queryKey: ["products", query],
     queryFn: async () => {
       const response = await fetchProducts({ query });
