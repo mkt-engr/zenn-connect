@@ -182,12 +182,47 @@ it("カートに商品が表示されること", () => {
 
 ## 改善案：ErrorBoundary / Suspense の局所化設計
 
-### どんな設計か
+### コンポーネント設計の方針
 
-- 各セクションを独立させる設計
-- フォールバックをセクションごとに最適化
-- 再試行の粒度を細かく制御できる
-- ユーザー体験の向上とデバッグ容易性
+カート、商品一覧、今日の名言でそれぞれ共通する書き方はこちらの通りです。
+
+API をコールするコンポーネントの親コンポーネントに`<ErrorBoundary>`と`<Suspense>`をラップさせます。
+こうすることでエラーとローディングの範囲を限定することができます。
+
+TODO:ErrorBoundary の具体的なコードは最後に載せる
+
+```tsx
+export const Content: FC<Props> = (props) => (
+  <ErrorBoundary fallback={<Error />}>
+    <Suspense fallback={<Loading />}>
+      <Inner {...props} /> //下のコンポーネントで定義
+    </Suspense>
+  </ErrorBoundary>
+);
+
+const Content: FC<Props> = (props) => {
+  //APIをコールしてデータを取得
+  const { data } = useContent();
+
+  return (
+    <div>
+      <div>{data.id}</div>
+      <div>{data.name}</div>
+    </div>
+  );
+};
+
+const Error = () => <div>データの取得に失敗しました。</div>;
+
+const Loading = () => <div>データを取得中です。</div>;
+```
+
+今回は簡単のためにエラーとローディングの時はテキスト表示のみにしています。
+
+- `<Error/>`コンポーネントには再読み込みボタン
+- `<Loading/> `コンポーネントにはスケルトン
+
+を使うといった工夫をしても良いかもしれません。
 
 ### メリット
 
