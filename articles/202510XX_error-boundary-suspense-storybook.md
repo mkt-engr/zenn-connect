@@ -300,12 +300,234 @@ Storybook を使えば、エラーやローディングを含めを個別にコ�
 
 ### 商品一覧を取得する API をコールする関数
 
+組み込み API の fetch を使います。
+ここで作成した関数はカスタムフックに組み込みます。
+
+```ts
+export const fetchProducts = async ({
+  query,
+}: Args): Promise<ProductsSearchResponse> => {
+  const response = await fetch(generateApiUrl(`/products/search?q=${query}`));
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const result = productsSearchResponseSchema.safeParse(data);
+
+  if (!result.success) {
+    throw new Error(`Invalid products data: ${result.error.message}`);
+  }
+
+  return result.data;
+};
+```
+
+正常系 1 つ、異常系 2 つのテストコードを実装しています。
+
+- 正常系
+- 異常系
+  - HTTP エラーが起きた場合
+  - 正常にレスポンスが返ってきたが、スキーマに違反する場合
+
+```ts
+describe("fetchProducts", () => {
+  it("正常にProductsSearchResponseを返し、クエリパラメータが正しく含まれる", async () => {
+    const onRequestSearchParams = vi.fn();
+    const mockData = generateProductsSearchMock({
+      products: [
+        generateProductInSearchMock({
+          id: 10,
+          title: "テスト商品",
+          description: "テスト用の商品説明",
+          price: 1000,
+        }),
+      ],
+      total: 1,
+    });
+
+    server.use(
+      buildGetProductsSearchHandler.success({
+        response: mockData,
+        onRequestSearchParams,
+      })
+    );
+
+    const { products, total } = await fetchProducts({ query: "test" });
+
+    expect(products).toHaveLength(1);
+    expect(products[0]).toMatchObject({
+      title: "テスト商品",
+      description: "テスト用の商品説明",
+      price: 1000,
+    });
+    expect(total).toBe(1);
+
+    // クエリパラメタがq="test"でリクエストされていることを確かめる
+    expect(onRequestSearchParams).toBeCalledWith({ q: "test" });
+  });
+
+  it("HTTPエラーの場合はエラーを投げる", async () => {
+    server.use(buildGetProductsSearchHandler.error({ status: 500 }));
+
+    await expect(fetchProducts({ query: "test" })).rejects.toThrow(
+      "HTTP error! status: 500"
+    );
+  });
+
+  it("不正なデータの場合はエラーを投げる", async () => {
+    const invalidData = generateProductsSearchMock({
+      products: [
+        generateProductInSearchMock({
+          id: "invalid" as unknown as number, // numberではなくstring
+          title: "テスト商品",
+        }),
+      ],
+    });
+
+    server.use(
+      buildGetProductsSearchHandler.success({
+        response: invalidData,
+      })
+    );
+
+    await expect(fetchProducts({ query: "test" })).rejects.toThrow(
+      "Invalid products data:"
+    );
+  });
+});
+```
+
 ### コンポーネント
 
-### MSW のハンドラを生成するユーティリティ
+TODO:商品一覧の画像を貼る。検索ボックスと一覧の表示がわかるように赤枠で囲う。
 
-同じ記述の繰り返しを避けるために、テストと Storybook で利用する MSW のハンドラを作成するユーティリティを作成します。
-TODO: 参考にしているページを明記する
+Shop コンポーネントに含まれる`<ProductList>`コンポーネントを実装します。
+
+上部はテキスト入力欄で、そこに入力された内容に基づいて検索を行い、下部に表示します。
+
+```tsx
+export const Shop = () => {
+  return (
+    <div>
+      <h1>Super coolなECサイト</h1>
+      <Cart />
+      <ProductList /> /** このコンポーネントを実装する */
+      <Quote />
+    </div>
+  );
+};
+```
+
+TODO:useDeferredValue の公式サイトのリンクを貼る
+
+本筋とは関係ないですが、入力するたびに一瞬ローディング画面が表示されるチラつきを防ぐために、React v19 から登場した`useDeferredValue`を利用しています。
+useDeferredValue は、UI の更新を遅延させることで、ユーザーの入力がスムーズに見えるようにします。
+query !== deferredQuery の間は「検索中」と表示し、バックグラウンドで新しい検索結果を取得しています。
+
+TODO:gif 載せる？
+API をコールして商品一覧を表示するコンポーネントは`<Result />`コンポーネント分離しています。
+
+```tsx
+export const ProductList = () => {
+  const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
+
+  return (
+    <main>
+      <h2>商品一覧</h2>
+      <label>
+        検索
+        <input
+          type="text"
+          name="検索"
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </label>
+      {query !== deferredQuery ? <span>検索中</span> : null}
+      <Result query={deferredQuery} />
+    </main>
+  );
+};
+```
+
+商品を表示する`<Result />`コンポーネント
+
+この設計のポイント：
+
+- `<Result>`コンポーネントが ErrorBoundary と Suspense を持つことで、このコンポーネント単体でテストや Storybook が作成できます
+- 実際のデータ取得と表示ロジックは`<Inner>`コンポーネントに分離し、責任を明確化しています
+- エラーやローディングの処理を`<Inner>`から分離することで、`<Inner>`は「データをどう表示するか」だけに集中できます
+
+```tsx
+type Props = {
+  query: string;
+};
+
+export const Result: FC<Props> = ({ query }: Props) => {
+  return (
+    <ErrorBoundary fallback={<div>商品一覧でエラーが発生しました</div>}>
+      <Suspense fallback={<div>商品一覧を読み込み中...</div>}>
+        <Inner query={query} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+};
+
+const Inner: FC<Props> = ({ query }) => {
+  const { data } = useProducts({ query });
+
+  if (data.products.length === 0) {
+    return (
+      <div>
+        <h3>商品がありませんでした。</h3>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h3>商品件数:{data.total}件</h3>
+      <div>
+        {data.products.map((product) => (
+          <div key={product.id}>
+            <img src={product.thumbnail} alt={product.title} width={100} />
+            <h3>{product.title}</h3>
+            <p>{product.description}</p>
+            <div>${product.price}</div>
+            <hr />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+```
+
+API をコールするカスタムフック
+TanStack Query の useSuspenseQuery を使っています。
+useSuspenseQuery は、ローディング中は自動的に親の`<Suspense>`の fallback を表示し、
+エラー時は自動的に親の`<ErrorBoundary>`の fallback を表示します。
+そのため、コンポーネント側でローディングやエラーの状態を管理する必要がなく、data のみを返しています。
+
+```ts
+type Args = {
+  query: string;
+};
+
+export const useProducts = ({ query }: Args) => {
+  const { data, isPending, error } = useSuspenseQuery({
+    queryKey: ["products", query],
+    queryFn: async () => {
+      const response = await fetchProducts({ query });
+      return response;
+    },
+  });
+
+  return { data };
+};
+```
 
 ### テスト
 
@@ -337,3 +559,18 @@ TODO:今日の名言がエラーになっても、カートや商品一覧など
 ```
 
 ```
+
+## 備考
+
+### MSW ハンドラのビルダー
+
+同じ記述の繰り返しを避けるために、テストと Storybook で利用する MSW のハンドラを作成するユーティリティを作成します。
+TODO: 参考にしているページを明記する
+
+### モックの生成関数
+
+### customRender
+
+###　 TestProvider
+
+## 参考
