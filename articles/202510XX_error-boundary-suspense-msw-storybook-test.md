@@ -15,6 +15,25 @@ published: false
   - Storybook を使うことでヘッダー、コンテンツ、フッターを並列して実装できる
 - 記事のゴールと完成イメージ
 
+### 主に利用したライブラリとそのバージョン
+
+主に利用したライブラリとそのバージョンはこちらです。
+
+| ライブラリ                  | バージョン |
+| --------------------------- | ---------- |
+| React                       | 19.1.1     |
+| Vite                        | 7.1.6      |
+| Vitest                      | 3.2.4      |
+| Storybook                   | 9.1.7      |
+| MSW                         | 2.11.2     |
+| @tanstack/react-query       | 5.90.2     |
+| @testing-library/react      | 16.3.0     |
+| @testing-library/jest-dom   | 6.8.0      |
+| @testing-library/user-event | 14.6.1     |
+| zod                         | 4.1.11     |
+
+なお、ダミーの API として[DummyJSON](https://dummyjson.com/docs)を利用しています。
+
 ## 題材
 
 下記の画像のような下記の 3 つで構成された EC サイトを題材とします。
@@ -33,8 +52,6 @@ TODO:画像の余白を小さくする
 TODO:コンポーネントの名前を画像に含める
 
 ![完成形のコード構成](/images/202510XX_article-error-boundary-suspense-msw-storybook-test/image.png)
-
-なお、ダミーの API として[DummyJSON](https://dummyjson.com/docs)を利用しています。
 
 ## よくない ErrorBoundary と Suspense の使い方と問題点（自分の実例）
 
