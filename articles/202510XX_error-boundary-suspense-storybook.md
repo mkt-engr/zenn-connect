@@ -172,9 +172,10 @@ export const Content = () => {
 import { render, screen } from "@testing-library/react";
 
 it("カートに商品が表示されること", () => {
-  //カート取得のAPIのレスポンスをモック
+  server.use(/** レスポンスをモック */);
 
   render(<Cart />);
+
   expect(screen.getByText("商品1")).toBeInTheDocument();
 });
 ```
