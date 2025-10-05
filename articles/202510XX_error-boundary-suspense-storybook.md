@@ -91,6 +91,7 @@ TODO:コンポーネントの名前を画像に含める
 
 Error Boundary や Suspense を知った当初は便利だなーと思いつつ、使い方がよくわかっていませんでした。
 具体的には下記のように、コンポーネントのトップの要素に**のみ**`<ErrorBoundary>`と`<Suspense>` をラップする形をよく採用していました。
+（`<Cart>`などのコンポーネントには含まれていない）
 
 ```tsx
 export const CheapShop = () => {
@@ -139,11 +140,44 @@ TODO:最新の Chromatic の URL を貼る
 #### コンポーネント単体のテスト・Storybook が書きにくい
 
 `<Cart />`コンポーネント単体でテストを書く場合、
-親の`<ErrorBoundary>`と`<Suspense>`に依存するため、
-ローディング状態やエラー状態を再現しにくくなります。
+`<Cart />`コンポーネント親コンポーネントにあった`<ErrorBoundary>`と`<Suspense>`がないため、ローディングやエラーのテストや Storybook が書きづらくなります。
 
-同様に Storybook でも、`<Cart />`のローディング表示やエラー表示を
-独立して確認することができなくなります。
+例えば下記のようなカートを表示するコンポーネントの単体テストを考えます。
+なお、useItem の内部では`TanStack Query`の`useSuspenseQuery`を使ってカートの情報を取得しています。
+
+```tsx
+export const Content = () => {
+  const { cart } = useItem({ userId: "1" });
+
+  if (cart.products.length === 0) {
+    return <div>カートには何もありません。</div>;
+  }
+
+  return (
+    <div>
+      <div>カートの商品の金額:{cart.total}円</div>
+      <ul>
+        {cart.products.map((product) => (
+          <li key={product.id}>{product.title}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+```
+
+このコンポーネントに商品が表示されることのテストを書こうとすると、Cart 内部で Promise をキャッチできる Suspense がないためエラーになります。
+
+```tsx
+import { render, screen } from "@testing-library/react";
+
+it("カートに商品が表示されること", () => {
+  //カート取得のAPIのレスポンスをモック
+
+  render(<Cart />);
+  expect(screen.getByText("商品1")).toBeInTheDocument();
+});
+```
 
 ## 改善案：ErrorBoundary / Suspense の局所化設計
 
