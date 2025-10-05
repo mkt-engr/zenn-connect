@@ -399,7 +399,12 @@ describe("fetchProducts", () => {
 });
 ```
 
-### コンポーネントと API をコールするカスタムフック
+### コンポーネント
+
+#### 検索ボックスと商品一覧を表示する`<ProductList>`コンポーネント
+
+入力フォームと検索結果の表示を担当します。
+実際の API 呼び出しとデータ表示は、次に説明する`<Result>`コンポーネントに委譲しています。
 
 TODO:商品一覧の画像を貼る。検索ボックスと一覧の表示がわかるように赤枠で囲う。
 
@@ -413,7 +418,7 @@ export const Shop = () => {
     <div>
       <h1>Super coolなECサイト</h1>
       <Cart />
-      <ProductList /> /** このコンポーネントを実装する */
+      <ProductList />
       <Quote />
     </div>
   );
@@ -452,7 +457,10 @@ export const ProductList = () => {
 };
 ```
 
-商品を表示する`<Result />`コンポーネント
+#### 商品一覧を表示する`<Result>`コンポーネント
+
+`<Result>`コンポーネントは、実際の API 呼び出しとデータ表示を担当します。
+`<ProductList>`から受け取った`query`を使って商品を検索します。
 
 この設計のポイント：
 
@@ -504,6 +512,8 @@ const Inner: FC<Props> = ({ query }) => {
   );
 };
 ```
+
+### API をコールするカスタムフック
 
 API をコールするカスタムフック
 TanStack Query の useSuspenseQuery を使っています。
