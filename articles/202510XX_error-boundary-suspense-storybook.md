@@ -557,7 +557,7 @@ export const useProducts = ({ query }: Args) => {
 
 TODO:できれば備考セクションへのリンクをつける
 
-#### 商品がある場合（正常系）
+#### 商品がある場合
 
 商品が 1 件ある場合のテストです。
 このテストでは以下を確認します：
@@ -600,7 +600,7 @@ describe("Result", () => {
 });
 ```
 
-#### 商品がない場合（正常系）
+#### 商品がない場合
 
 商品が 0 件の場合、「商品がありませんでした。」というメッセージが表示されることを確認します。
 
@@ -661,6 +661,133 @@ describe("Result", () => {
 ```
 
 ### Storybook
+
+`<Result>`コンポーネントの 4 つの状態を Storybook で確認できるようにします。
+MSW を使って API のレスポンスをモックすることで、各状態を簡単に再現できます。
+
+下記の 4 つのストーリーを実装します：
+
+- 商品がある場合（Default）
+- 商品がない場合（NoProduct）
+- ローディング中（Loading）
+- エラー（Error）
+
+#### Storybook の設定
+
+`inline: false`を設定することで、各ストーリーを個別の iframe で実行します。
+これにより、TanStack Query のキャッシュの競合を回避し、各ストーリーが独立して動作するようになります。
+
+```tsx
+const meta: Meta<typeof component> = {
+  tags: ["autodocs"],
+  component,
+  parameters: {
+    docs: {
+      story: {
+        // inline:falseにより、各Storyを個別のiframeで実行するように設定した
+        // DocsページでもStoryが独立したiframeで動作し、TanStack Queryのキャッシュ競合を回避できる
+        inline: false,
+        iframeHeight: 200,
+      },
+    },
+  },
+};
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+```
+
+#### 商品がある場合（Default）
+
+TODO: Chromatic のリンクを貼る
+
+商品が 3 件表示される状態です。
+実際の UI でユーザーが商品を検索して結果が表示された状態を再現します。
+
+```tsx
+export const Default: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        buildGetProductsSearchHandler.success({
+          response: generateProductsSearchMock({
+            products: [
+              generateProductInSearchMock({
+                id: 1,
+                title: "iPhone 9",
+                description: "An apple mobile which is nothing like apple",
+                category: "smartphones",
+                price: 549,
+                brand: "Apple",
+              }),
+              /** 同様のものを2件追加する　*/
+            ],
+            total: 3,
+          }),
+        }),
+      ],
+    },
+  },
+};
+```
+
+#### 商品がない場合（NoProduct）
+
+TODO: Chromatic のリンクを貼る
+
+検索結果が 0 件の場合、「商品がありませんでした。」というメッセージが表示されます。
+
+```tsx
+export const NoProduct: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        buildGetProductsSearchHandler.success({
+          response: generateProductsSearchMock({
+            products: [],
+            total: 0,
+          }),
+        }),
+      ],
+    },
+  },
+};
+```
+
+#### ローディング中（Loading）
+
+TODO: Chromatic のリンクを貼る
+
+API 通信中の状態です。
+`<Suspense>`の fallback として「商品一覧を読み込み中...」が表示されます。
+
+```tsx
+export const Loading: Story = {
+  parameters: {
+    msw: {
+      handlers: [buildGetProductsSearchHandler.loading()],
+    },
+  },
+};
+```
+
+#### エラー（Error）
+
+TODO: Chromatic のリンクを貼る
+
+API でエラーが発生した場合の状態です。
+`<ErrorBoundary>`の fallback として「商品一覧でエラーが発生しました」が表示されます。
+
+```tsx
+export const Error: Story = {
+  parameters: {
+    msw: {
+      handlers: [buildGetProductsSearchHandler.error({ status: 500 })],
+    },
+  },
+};
+```
 
 ## カートと今日の名言のコンポーネントの実装
 
