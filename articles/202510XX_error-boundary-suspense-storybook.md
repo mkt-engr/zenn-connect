@@ -500,7 +500,7 @@ const Inner: FC<Props> = ({ query }) => {
             <img src={product.thumbnail} alt={product.title} width={100} />
             <h3>{product.title}</h3>
             <p>{product.description}</p>
-            <div>${product.price}</div>
+            <div>{product.price}円</div>
             <hr />
           </div>
         ))}
@@ -539,10 +539,126 @@ export const useProducts = ({ query }: Args) => {
 
 ### テスト
 
-- API モック方法（MSW または fetch のスタブ）
-- 成功 / エラー / ローディングケースを局所化してテスト
-- コンポーネント単位のテスト設計
-- Storybook とテストの役割分担
+`<Result>`コンポーネントの 4 つの状態をテストします。
+`<ErrorBoundary>`と`<Suspense>`が内包されているため、このコンポーネント単体でローディングやエラーのテストが可能です。
+
+下記の 4 つのテストを実装します：
+
+- 商品がある場合
+- 商品がない場合
+- ローディング中
+- エラー
+
+#### テストのセットアップ
+
+テストでは`customRender`という独自のレンダー関数を使用しています。
+これは、`<QueryClientProvider>`などの必要な Provider でコンポーネントをラップするためのユーティリティです。
+詳細は「備考」セクションを参照してください。
+
+TODO:できれば備考セクションへのリンクをつける
+
+#### 商品がある場合（正常系）
+
+商品が 1 件ある場合のテストです。
+このテストでは以下を確認します：
+
+- 商品情報が正しく表示される
+- 商品件数が正しく表示される
+- クエリパラメータ`q`が正しく API リクエストに含まれている
+
+```tsx
+describe("Result", () => {
+  it("商品が1つある場合、商品一覧と件数が表示されること", async () => {
+    const onRequestSearchParams = vi.fn();
+
+    server.use(
+      buildGetProductsSearchHandler.success({
+        response: generateProductsSearchMock({
+          products: [
+            generateProductInSearchMock({
+              id: 1,
+              title: "iPhone 15 Pro",
+              description: "最新のApple製スマートフォン",
+              category: "スマートフォン",
+              price: 159800,
+            }),
+          ],
+          total: 1,
+        }),
+        onRequestSearchParams,
+      })
+    );
+
+    customRender(<Result query="iPhone" />);
+
+    expect(await screen.findByText("商品件数:1件")).toBeInTheDocument();
+    expect(await screen.findByText("iPhone 15 Pro")).toBeInTheDocument();
+
+    // products/search?q=iPhoneとなっているかを確かめる
+    expect(onRequestSearchParams).toBeCalledWith({ q: "iPhone" });
+  });
+});
+```
+
+#### 商品がない場合（正常系）
+
+商品が 0 件の場合、「商品がありませんでした。」というメッセージが表示されることを確認します。
+
+```tsx
+describe("Result", () => {
+   it("商品が0の場合、商品がないメッセージが表示されること", async () => {
+    server.use(
+      buildGetProductsSearchHandler.success({
+        response: generateProductsSearchMock({
+          products: [],
+          total: 0,
+        }),
+      })
+    );
+
+    customRender(<Result query="" />);
+
+    expect(
+      await screen.findByText("商品がありませんでした。")
+    ).toBeInTheDocument();
+});
+```
+
+#### ローディング中
+
+API 通信中は`<Suspense>`の fallback が表示されることを確認します。
+`buildGetProductsSearchHandler.loading()`を使うことで、MSW でレスポンスを遅延させています。
+
+```tsx
+describe("Result", () => {
+  it("ローディング中は読み込み中のメッセージが表示されること", async () => {
+    server.use(buildGetProductsSearchHandler.loading());
+
+    customRender(<Result query="test" />);
+
+    expect(screen.getByText("商品一覧を読み込み中...")).toBeInTheDocument();
+  });
+});
+```
+
+#### エラー
+
+API でエラーが発生した場合は`<ErrorBoundary>`の fallback が表示されることを確認します。
+ここでは 500 エラーを想定していますが、404 やネットワークエラーなど他のエラーでも同様に動作します。
+
+```tsx
+describe("Result", () => {
+  it("エラー発生時はエラーメッセージが表示される", async () => {
+    server.use(buildGetProductsSearchHandler.error({ status: 500 }));
+
+    customRender(<Result query="test" />);
+
+    expect(
+      await screen.findByText("商品一覧でエラーが発生しました")
+    ).toBeInTheDocument();
+  });
+});
+```
 
 ### Storybook
 
