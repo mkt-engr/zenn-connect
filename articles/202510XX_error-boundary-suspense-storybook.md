@@ -1110,4 +1110,32 @@ export const customRender = (
 ) => render(ui, { wrapper: TestProvider, ...options });
 ```
 
+通常の`render`を使う場合、毎回 Provider を手動でラップする必要があります：
+
+```tsx
+// render を使う場合（冗長）
+it("商品が表示される", async () => {
+  render(
+    <QueryClientProvider client={queryClient}>
+      <ErrorBoundary fallback={<div>エラー</div>}>
+        <Suspense fallback={<div>読み込み中</div>}>
+          <Result query="iPhone" />
+        </Suspense>
+      </ErrorBoundary>
+    </QueryClientProvider>
+  );
+  expect(await screen.findByText("iPhone 15 Pro")).toBeInTheDocument();
+});
+```
+
+`customRender`を使えば、Provider のラップが自動化されシンプルになります：
+
+```tsx
+// customRender を使う場合（シンプル）
+it("商品が表示される", async () => {
+  customRender(<Result query="iPhone" />);
+  expect(await screen.findByText("iPhone 15 Pro")).toBeInTheDocument();
+});
+```
+
 ## 参考
