@@ -929,10 +929,6 @@ Storybook では、今日の名言の 4 つの状態（成功/ローディング
 `<Cart>`、`<ProductList>`、`<Quote>`の各コンポーネント内部には`<ErrorBoundary>`と`<Suspense>`がありません。
 
 ```tsx
-import { Cart } from "./Cart";
-import { ProductList } from "./ProductList";
-import { Quote } from "./Quote";
-
 export const CheapShop = () => {
   return (
     <ErrorBoundary fallback={<div>全画面エラーが発生しました</div>}>
@@ -954,10 +950,6 @@ export const CheapShop = () => {
 各コンポーネント（`<Cart>`、`<ProductList>`、`<Quote>`）が独立して`<ErrorBoundary>`と`<Suspense>`を持っているため、**1 つのコンポーネントがエラーやローディング状態でも、他のコンポーネントは正常に動作します。**
 
 ```tsx
-import { Cart } from "./Cart";
-import { ProductList } from "./ProductList";
-import { Quote } from "./Quote";
-
 export const Shop = () => {
   return (
     <div>
