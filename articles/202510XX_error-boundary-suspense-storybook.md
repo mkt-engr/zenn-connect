@@ -920,10 +920,44 @@ Storybook では、今日の名言の 4 つの状態（成功/ローディング
 
 ## カート、商品一覧、今日の名言のコンポーネントを組み込む
 
-これまで個別に実装してきた 3 つのコンポーネントを、`<Shop>`コンポーネントに組み込みます。
-各コンポーネントが独立して`<ErrorBoundary>`と`<Suspense>`を持っているため、**1 つのコンポーネントがエラーやローディング状態でも、他のコンポーネントは正常に動作します。**
+これまで個別に実装してきた 3 つのコンポーネントを組み込みます。
+ここでは、「よくない例」の`<CheapShop>`と「改善例」の`<Shop>`を比較します。
+
+### よくない例：CheapShop
+
+`<ErrorBoundary>`と`<Suspense>`がトップレベルにのみ配置されています。
+`<Cart>`、`<ProductList>`、`<Quote>`の各コンポーネント内部には`<ErrorBoundary>`と`<Suspense>`がありません。
 
 ```tsx
+import { Cart } from "./Cart";
+import { ProductList } from "./ProductList";
+import { Quote } from "./Quote";
+
+export const CheapShop = () => {
+  return (
+    <ErrorBoundary fallback={<div>全画面エラーが発生しました</div>}>
+      <Suspense fallback={<div>全画面読み込み中...</div>}>
+        <div>
+          <h1>Super coolなECサイト</h1>
+          <Cart />
+          <ProductList />
+          <Quote />
+        </div>
+      </Suspense>
+    </ErrorBoundary>
+  );
+};
+```
+
+### 改善例：Shop
+
+各コンポーネント（`<Cart>`、`<ProductList>`、`<Quote>`）が独立して`<ErrorBoundary>`と`<Suspense>`を持っているため、**1 つのコンポーネントがエラーやローディング状態でも、他のコンポーネントは正常に動作します。**
+
+```tsx
+import { Cart } from "./Cart";
+import { ProductList } from "./ProductList";
+import { Quote } from "./Quote";
+
 export const Shop = () => {
   return (
     <div>
