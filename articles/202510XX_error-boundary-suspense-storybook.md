@@ -1081,19 +1081,25 @@ export const customRender = (
 テストで必要な Provider をまとめたコンポーネントです。
 
 ```tsx
-export const TestProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const TestProvider = ({ children }: Props) => {
+  // NOTE: Storybookやテストごとに新たにクライアントを作らないと最初の表示したものが別のケースに依存してしまう。
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
         retry: false,
+        staleTime: 0,
       },
     },
   });
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <ErrorBoundary fallback={<div>全画面エラー</div>}>
+        <Suspense fallback={<div>全画面読み込み中...</div>}>
+          {children}
+        </Suspense>
+      </ErrorBoundary>
+    </QueryClientProvider>
   );
 };
 ```
