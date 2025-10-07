@@ -1066,17 +1066,12 @@ export const generateProductsSearchMock = (
 
 ### customRender と TestProvider
 
-テストで使用する独自のレンダー関数です。
-コンポーネントを必要な Provider でラップしてレンダリングします。
+テストでコンポーネントをレンダリングする際、`QueryClientProvider`などの必要な Provider でラップする必要があります。
+`TestProvider`で Provider をまとめ、`customRender`でそれを使ってレンダリングすることで、テストコードをシンプルに保ちます。
 
 参考: [Setup | Testing Library](https://testing-library.com/docs/react-testing-library/setup/#custom-render)
 
-```tsx
-export const customRender = (
-  ui: ReactElement,
-  options?: Omit<RenderOptions, "wrapper">
-) => render(ui, { wrapper: TestProvider, ...options });
-```
+#### TestProvider
 
 テストで必要な Provider をまとめたコンポーネントです。
 
@@ -1102,6 +1097,17 @@ export const TestProvider = ({ children }: Props) => {
     </QueryClientProvider>
   );
 };
+```
+
+#### customRender
+
+`TestProvider`を使ってコンポーネントをラップする独自のレンダー関数です。
+
+```tsx
+export const customRender = (
+  ui: ReactElement,
+  options?: Omit<RenderOptions, "wrapper">
+) => render(ui, { wrapper: TestProvider, ...options });
 ```
 
 ## 参考
