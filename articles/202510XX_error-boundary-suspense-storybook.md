@@ -1069,6 +1069,8 @@ export const generateProductsSearchMock = (
 テストで使用する独自のレンダー関数です。
 コンポーネントを必要な Provider でラップしてレンダリングします。
 
+参考: [Setup | Testing Library](https://testing-library.com/docs/react-testing-library/setup/#custom-render)
+
 ```tsx
 export const customRender = (
   ui: ReactElement,
