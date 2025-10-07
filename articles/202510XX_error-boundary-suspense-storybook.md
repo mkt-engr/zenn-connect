@@ -791,15 +791,103 @@ export const Error: Story = {
 
 ## カートと今日の名言のコンポーネントの実装
 
-商品の一覧コンポーネントと同様の流れで行うので簡単に書く。
+商品一覧と同様のパターンで実装します。
+各コンポーネントが`<ErrorBoundary>`と`<Suspense>`を内包することで、独立してテストと Storybook が作成できます。
 
 ### カート
+
+カートコンポーネントは、ユーザー ID を受け取ってカート内の商品を表示します。
+
+```tsx
+export const Content = () => {
+  return (
+    <ErrorBoundary fallback={<div>カートの取得に失敗しました。</div>}>
+      <Suspense fallback={<div>カートの読み込み中...</div>}>
+        <Inner />
+      </Suspense>
+    </ErrorBoundary>
+  );
+};
+
+const Inner = () => {
+  const { cart } = useItem({ userId: "1" });
+
+  if (cart.products.length === 0) {
+    return <div>カートには何もありません。</div>;
+  }
+
+  return (
+    <div>
+      <div>カートの商品の金額:{cart.total}円</div>
+      <ul>
+        {cart.products.map((product) => (
+          <li key={product.id}>{product.title}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+```
+
+**実装のポイント：**
+
+- `useItem`カスタムフックで`useSuspenseQuery`を使用してカート情報を取得
+- カートが空の場合は「カートには何もありません。」と表示
+- 商品一覧と同様に、テストと Storybook で 4 つの状態（商品あり/なし/ローディング/エラー）を確認可能
+
+### 今日の名言
+
+今日の名言コンポーネントは、外部 API から名言を取得して表示します。
+このコンポーネントがエラーになっても、カートや商品一覧は正常に動作します。
+
+```tsx
+export const Content = () => {
+  return (
+    <ErrorBoundary fallback={<Fallback />}>
+      <Suspense fallback={<Loading />}>
+        <Inner />
+      </Suspense>
+    </ErrorBoundary>
+  );
+};
+
+const Inner = () => {
+  const { data } = useQuote();
+
+  return (
+    <blockquote>
+      <p>"{data.quote}"</p>
+      <cite>— {data.author}</cite>
+    </blockquote>
+  );
+};
+
+const Fallback = () => {
+  return (
+    <blockquote>
+      <p>今日の名言の取得に失敗しました。</p>
+    </blockquote>
+  );
+};
+
+const Loading = () => {
+  return (
+    <blockquote>
+      <p>今日の名言を読み込み中...</p>
+    </blockquote>
+  );
+};
+```
+
+**実装のポイント：**
+
+- `useQuote`カスタムフックで`useSuspenseQuery`を使用
+- 優先度が低いため、`<Fallback>`と`<Loading>`をコンポーネントとして定義し、シンプルなメッセージのみ表示
+- このコンポーネントが独立しているため、エラーが発生してもカートや商品一覧には影響しない
 
 ## カート、商品一覧、今日の名言のコンポーネントを組み込む
 
 TODO:今日の名言がエラーになっても、カートや商品一覧などの重要な機能は利用できることを示す。
-
-### 今日の名言
 
 ## まとめ
 
