@@ -968,15 +968,37 @@ export const Shop = () => {
 
 #### よくない例（CheapShop）：全画面エラー
 
-`<CheapShop>`では、今日の名言の API がエラーになると、画面全体がエラー表示になります。
-カートや商品一覧も含め、すべての機能が使用不可能になります。
+`<CheapShop>`では、優先度の低い今日の名言の API がエラーになると、画面全体がエラー表示になります。
+**カートや商品一覧も含め、EC サイトの主要機能がすべて使用不可能になります。**
+
+```tsx
+export const ErrorOnQuote: Story = {
+  parameters: {
+    msw: {
+      handlers: [buildGetQuoteHandler.error({ status: 500 }), ...handlers],
+    },
+  },
+};
+```
 
 TODO: Chromatic のリンクを貼る
 
 #### 改善例（Shop）：今日の名言のみエラー
 
 `<Shop>`では、今日の名言の API がエラーになっても、その部分だけがエラー表示になります。
-カートと商品一覧は正常に表示され、ユーザーは EC サイトの主要機能を問題なく利用できます。
+**カートと商品一覧は正常に表示され、ユーザーは EC サイトの主要機能を問題なく利用できます。**
+
+優先度の低い機能のエラーが、重要な機能に影響を与えないため、ユーザー体験が大きく向上します。
+
+```tsx
+export const ErrorOnQuote: Story = {
+  parameters: {
+    msw: {
+      handlers: [buildGetQuoteHandler.error({ status: 500 }), ...handlers],
+    },
+  },
+};
+```
 
 TODO: Chromatic のリンクを貼る
 
