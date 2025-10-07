@@ -990,6 +990,9 @@ TODO: Chromatic のリンクを貼る
 
 優先度の低い機能のエラーが、重要な機能に影響を与えないため、ユーザー体験が大きく向上します。
 
+今日の名言のみエラーになっていることを確認できる Storybook はこちらです。
+今日の名言のコンポーネントだけエラーを発生させています。
+
 ```tsx
 export const ErrorOnQuote: Story = {
   parameters: {
