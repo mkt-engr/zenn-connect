@@ -923,7 +923,7 @@ Storybook では、今日の名言の 4 つの状態（成功/ローディング
 これまで個別に実装してきた 3 つのコンポーネントを組み込みます。
 ここでは、「よくない例」の`<CheapShop>`と「改善例」の`<Shop>`を比較します。
 
-### よくない例：CheapShop
+### 最初に示したよくない例：CheapShop
 
 `<ErrorBoundary>`と`<Suspense>`がトップレベルにのみ配置されています。
 `<Cart>`、`<ProductList>`、`<Quote>`の各コンポーネント内部には`<ErrorBoundary>`と`<Suspense>`がありません。
@@ -964,22 +964,12 @@ export const Shop = () => {
 
 ### エラーの局所化を確認する
 
-「よくない例」で示した`<CheapShop>`との違いを確認するため、今日の名言がエラーになった場合の動作を Storybook で比較します。
+「よくない例」の`<CheapShop>`と「改善例」の`<Shop>`で、今日の名言がエラーになった場合の動作を Storybook で比較します。
 
 #### よくない例（CheapShop）：全画面エラー
 
 `<CheapShop>`では、優先度の低い今日の名言の API がエラーになると、画面全体がエラー表示になります。
 **カートや商品一覧も含め、EC サイトの主要機能がすべて使用不可能になります。**
-
-```tsx
-export const ErrorOnQuote: Story = {
-  parameters: {
-    msw: {
-      handlers: [buildGetQuoteHandler.error({ status: 500 }), ...handlers],
-    },
-  },
-};
-```
 
 TODO: Chromatic のリンクを貼る
 
