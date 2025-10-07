@@ -1142,8 +1142,8 @@ it("商品が表示される", async () => {
 
 ## 参考
 
-- [Suspense – React](https://ja.react.dev/reference/react/Suspense)
-- [useDeferredValue – React](https://ja.react.dev/reference/react/useDeferredValue)
+- [Suspense - React](https://ja.react.dev/reference/react/Suspense)
+- [useDeferredValue - React](https://ja.react.dev/reference/react/useDeferredValue)
 - [TanStack Query - Installation](https://tanstack.com/query/latest/docs/framework/react/installation)
 - [DummyJSON - Fake REST API](https://dummyjson.com/docs)
 - [MSW の成功・失敗・ローディング・カスタムレスポンス・引数のテストをラクにするハンドラービルダー関数](https://tech.jxpress.net/entry/2025/01/14/103618)
