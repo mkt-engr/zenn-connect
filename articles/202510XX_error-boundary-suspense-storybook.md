@@ -1053,7 +1053,6 @@ API レスポンスのモックデータを生成する関数を用意してい�
 これにより、テストや Storybook で一貫したデータ構造を簡単に作成できます。
 
 ```ts
-// 商品一覧のモックを生成
 export const generateProductsSearchMock = (
   override?: Partial<ProductsSearchResponse>
 ): ProductsSearchResponse => ({
@@ -1061,20 +1060,6 @@ export const generateProductsSearchMock = (
   total: 0,
   skip: 0,
   limit: 30,
-  ...override,
-});
-
-// 個別の商品モックを生成
-export const generateProductInSearchMock = (
-  override?: Partial<ProductInSearch>
-): ProductInSearch => ({
-  id: 1,
-  title: "Sample Product",
-  description: "Sample description",
-  price: 1000,
-  thumbnail: "https://example.com/image.jpg",
-  category: "category",
-  brand: "brand",
   ...override,
 });
 ```
