@@ -1070,9 +1070,10 @@ export const generateProductsSearchMock = (
 コンポーネントを必要な Provider でラップしてレンダリングします。
 
 ```tsx
-export const customRender = (ui: React.ReactElement) => {
-  return render(ui, { wrapper: TestProvider });
-};
+export const customRender = (
+  ui: ReactElement,
+  options?: Omit<RenderOptions, "wrapper">
+) => render(ui, { wrapper: TestProvider, ...options });
 ```
 
 ### TestProvider
