@@ -1064,7 +1064,7 @@ export const generateProductsSearchMock = (
 });
 ```
 
-### customRender
+### customRender と TestProvider
 
 テストで使用する独自のレンダー関数です。
 コンポーネントを必要な Provider でラップしてレンダリングします。
@@ -1077,8 +1077,6 @@ export const customRender = (
   options?: Omit<RenderOptions, "wrapper">
 ) => render(ui, { wrapper: TestProvider, ...options });
 ```
-
-### TestProvider
 
 テストで必要な Provider をまとめたコンポーネントです。
 
