@@ -1012,13 +1012,32 @@ API をコールするコンポーネントの親コンポーネントに`<Error
 
 記事の本筋からは外れますが、テストと Storybook で利用したユーティリティについて説明します。
 
-### MSW ハンドラのビルダー
+### モックの生成関数と MSW ハンドラのビルダー
 
-テストと Storybook で MSW のハンドラを作成する際、同じ記述を繰り返すのを避けるため、ハンドラを生成するユーティリティ関数を作成しました。
+テストと Storybook で MSW を使う際、モックデータの生成とハンドラの作成を効率化するユーティリティを用意しています。
 
 参考: [MSW の成功・失敗・ローディング・カスタムレスポンス・引数のテストをラクにするハンドラービルダー関数](https://tech.jxpress.net/entry/2025/01/14/103618)
 
-この関数を使うことで、以下のようにハンドラを簡単に作成できます：
+#### モックの生成関数
+
+API レスポンスのモックデータを生成する関数です。
+テストや Storybook で一貫したデータ構造を簡単に作成できます。
+
+```ts
+export const generateProductsSearchMock = (
+  override?: Partial<ProductsSearchResponse>
+): ProductsSearchResponse => ({
+  products: [],
+  total: 0,
+  skip: 0,
+  limit: 30,
+  ...override,
+});
+```
+
+#### MSW ハンドラのビルダー
+
+モック生成関数を使って、MSW のハンドラを簡単に作成できます。
 
 ```ts
 // ハンドラービルダーを作成
@@ -1044,23 +1063,6 @@ const onRequestSearchParams = vi.fn();
 const captureHandler = buildGetProductsSearchHandler.success({
   response: generateProductsSearchMock(),
   onRequestSearchParams,
-});
-```
-
-### モックの生成関数
-
-API レスポンスのモックデータを生成する関数を用意しています。
-これにより、テストや Storybook で一貫したデータ構造を簡単に作成できます。
-
-```ts
-export const generateProductsSearchMock = (
-  override?: Partial<ProductsSearchResponse>
-): ProductsSearchResponse => ({
-  products: [],
-  total: 0,
-  skip: 0,
-  limit: 30,
-  ...override,
 });
 ```
 
