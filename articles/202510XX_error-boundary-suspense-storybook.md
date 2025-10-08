@@ -3,13 +3,17 @@ title: "Error Boundary と Suspense の配置で決まる、
   コンポーネントの開発体験とユーザー体験"
 emoji: "😊"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: [React]
+topics: [React, Test, Storybook]
 published: false
 ---
 
 ## TODO：消せ
 
 タイトルの案
+
+- ErrorBoundary と Suspense の配置が導く、テストしやすく UX を考慮した React コンポーネント設計
+
+  - 第 1 候補かも
 
 - "Error Boundary と Suspense の配置で決まる、
   コンポーネントの開発体験とユーザー体験"
