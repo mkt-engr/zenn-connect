@@ -86,10 +86,7 @@ TODO:ブランチも書く
 今日の名言のセクションは社長がどうしてもと要望されて入れたもので、EC サイトの構成要素としては全く不要なものとします。
 :::
 
-TODO:画像の余白を小さくする
-TODO:コンポーネントの名前を画像に含める
-
-![完成形のコード構成](/images/202510XX_article-error-boundary-suspense-msw-storybook-test/image.png)
+![完成形のコード構成](/images/202510XX_article-error-boundary-suspense-msw-storybook-test/total-view.png)
 
 ## よくない ErrorBoundary と Suspense の使い方と問題点（自分の実例）
 
