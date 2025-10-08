@@ -11,7 +11,7 @@ published: false
 
 タイトルの案
 
-- ErrorBoundary と Suspense の配置が導く、テストしやすく UX を考慮した React コンポーネント設計
+- Error Boundary と Suspense の配置が導く、テストしやすく UX を考慮した React コンポーネント設計
 
   - 第 1 候補かも
 
@@ -421,9 +421,7 @@ export const Shop = () => {
 };
 ```
 
-TODO:useDeferredValue の公式サイトのリンクを貼る
-
-本筋とは関係ないですが、入力するたびに一瞬ローディング画面が表示されるチラつきを防ぐために、React v19 から登場した`useDeferredValue`を利用しています。
+本筋とは関係ないですが、入力するたびに一瞬ローディング画面が表示されるチラつきを防ぐために、React v19 から登場した[`useDeferredValue`](https://ja.react.dev/reference/react/useDeferredValue)を利用しています。
 `useDeferredValue`は、UI の更新を遅延させることで、ユーザーの入力がスムーズに見えるようにします。
 `query !== deferredQuery`の間は「検索中」と表示し、バックグラウンドで新しい検索結果を取得しています。
 
