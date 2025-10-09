@@ -544,7 +544,7 @@ export const useProducts = ({ query }: Args) => {
 
 テストでは`customRender`という独自のレンダー関数を使用しています。
 これは、`<QueryClientProvider>`などの必要な Provider でコンポーネントをラップするためのユーティリティです。
-詳細は[備考](#備考)セクションを参照してください。
+詳細は[備考 - customRender と TestProvider](#customrender-と-testprovider)セクションを参照してください。
 
 #### 商品がある場合
 
