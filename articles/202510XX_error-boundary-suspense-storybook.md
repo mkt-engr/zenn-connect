@@ -1141,6 +1141,7 @@ it("商品が表示される", async () => {
 
 ## 参考
 
+- [Component - Catching rendering errors with an error boundary | React](https://ja.react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)
 - [Suspense - React](https://ja.react.dev/reference/react/Suspense)
 - [useDeferredValue - React](https://ja.react.dev/reference/react/useDeferredValue)
 - [TanStack Query - Installation](https://tanstack.com/query/latest/docs/framework/react/installation)
