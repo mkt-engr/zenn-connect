@@ -960,7 +960,7 @@ export const Shop = () => {
 
 優先度の低い機能のエラーが、重要な機能に影響を与えないため、ユーザー体験が大きく向上します。
 
-TODO:今日の名言だけエラーになっている画像を貼る
+![今日の名言だけエラーになっている画像](/images/202510XX_article-error-boundary-suspense-msw-storybook-test/total-view-with-quota-error.png)
 
 今日の名言のみエラーになっているが、それ以外のカートと商品一覧は確認できる Storybook はこちらです。
 
