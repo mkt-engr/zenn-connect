@@ -188,7 +188,7 @@ it("カートに商品が表示されること", () => {
 API をコールするコンポーネントの親コンポーネントに`<ErrorBoundary>`と`<Suspense>`をラップさせます。
 こうすることでエラーとローディングの範囲を限定することができます。
 
-TODO:ErrorBoundary の具体的なコードは最後に載せる
+なお Error Boundary の実装は[こちら](https://ja.react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)を参考にしています。
 
 ```tsx
 export const Content: FC<Props> = (props) => (
