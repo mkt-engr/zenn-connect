@@ -124,16 +124,14 @@ export const CheapShop = () => {
 例えば、商品一覧とカートのデータ取得は完了していても、
 今日の名言の API だけが遅い場合、ユーザーは何も操作できません。
 
-TODO:最新の Chromatic の URL を貼る
-[全画面ローディングの Story]()
+[全画面ローディングの Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-cheapshop-cheapshop--loading)
 
 #### 2. 1 つのエラーで全機能が使用不可になる
 
 優先度の低い「今日の名言」の API がエラーになっただけで、
 商品一覧もカートも含めた画面全体が「エラーが発生しました」になります。
 
-TODO:最新の Chromatic の URL を貼る
-[全画面エラーの Story]()
+[全画面エラーの Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-cheapshop-cheapshop--error)
 
 ユーザーから見ると下記のような不便さがあります。
 
@@ -689,7 +687,7 @@ type Story = StoryObj<typeof meta>;
 
 #### 商品がある場合（Default）
 
-TODO: Chromatic のリンクを貼る
+[商品がある場合の Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--default)
 
 商品が 3 件表示される状態です。
 実際の UI でユーザーが商品を検索して結果が表示された状態を再現します。
@@ -723,7 +721,7 @@ export const Default: Story = {
 
 #### 商品がない場合（NoProduct）
 
-TODO: Chromatic のリンクを貼る
+[商品がない場合の Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--no-product)
 
 検索結果が 0 件の場合、「商品がありませんでした。」というメッセージが表示されます。
 
@@ -746,7 +744,7 @@ export const NoProduct: Story = {
 
 #### ローディング中（Loading）
 
-TODO: Chromatic のリンクを貼る
+[ローディング中の Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--loading)
 
 API 通信中の状態です。
 `<Suspense>`の fallback として「商品一覧を読み込み中...」が表示されます。
@@ -763,7 +761,7 @@ export const Loading: Story = {
 
 #### エラー（Error）
 
-TODO: Chromatic のリンクを貼る
+[エラーの Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--error)
 
 API でエラーが発生した場合の状態です。
 `<ErrorBoundary>`の fallback として「商品一覧でエラーが発生しました」が表示されます。
@@ -831,7 +829,7 @@ const Inner = () => {
 };
 ```
 
-TODO: Chromatic のリンクを貼る
+[カートの Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-cart--default)
 
 Storybook では、カートの 4 つの状態（商品あり/なし/ローディング/エラー）を確認できます。
 
@@ -892,7 +890,7 @@ const Loading = () => {
 };
 ```
 
-TODO: Chromatic のリンクを貼る
+[今日の名言の Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-quote--default)
 
 Storybook では、今日の名言の 4 つの状態（成功/ローディング/エラー）を確認できます。
 
@@ -974,7 +972,7 @@ export const ErrorOnQuote: Story = {
 };
 ```
 
-TODO: Chromatic のリンクを貼る
+[ErrorOnQuote の Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop--error-on-quote)
 
 このように、ErrorBoundary と Suspense を適切に配置することで、エラーの影響範囲を最小限に抑え、ユーザー体験を大きく向上させることができます。
 
