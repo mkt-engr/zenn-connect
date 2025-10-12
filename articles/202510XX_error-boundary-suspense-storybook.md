@@ -1,6 +1,5 @@
 ---
-title: "Error Boundary と Suspense の配置で決まる、
-  コンポーネントの開発体験とユーザー体験"
+title: "Error Boundary と Suspense の配置で実現する、テスト・Storybook・UX を考慮した React コンポーネント設計"
 emoji: "😊"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [React, Test, Storybook]
@@ -10,6 +9,8 @@ published: false
 ## TODO：消せ
 
 タイトルの案
+
+- Error Boundary と Suspense の配置で実現する、テスト・Storybook・UX を考慮した React コンポーネント設計
 
 - Error Boundary と Suspense の配置が導く、テストしやすく UX を考慮した React コンポーネント設計
 
@@ -27,7 +28,7 @@ published: false
 
 ## はじめに
 
-この記事では、**Error Boundary と Suspense の配置**という、
+この記事では、Error Boundary と Suspense の配置という、
 一見地味だが重要な設計判断が、
 
 - テストの書きやすさ
@@ -54,6 +55,7 @@ Error Boundary/Suspense を使ったことがあるが、それらを用いた�
 ### 主に利用したライブラリとそのバージョン
 
 主に利用したライブラリとそのバージョンはこちらです。
+Next.js や RSC は使っていないのでご注意ください。
 
 | ライブラリ                  | バージョン |
 | --------------------------- | ---------- |
