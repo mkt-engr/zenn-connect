@@ -169,11 +169,11 @@ API をコールするコンポーネントの親コンポーネントに`<Error
 
 ```tsx
 export const Content: FC<Props> = (props) => (
-  <Error Boundary fallback={<Error />}>
+  <ErrorBoundary fallback={<Error />}>
     <Suspense fallback={<Loading />}>
       <Inner {...props} /> //下のコンポーネントで定義
     </Suspense>
-  </Error Boundary>
+  </ErrorBoundary>
 );
 
 const Inner: FC<Props> = (props) => {
@@ -276,7 +276,9 @@ MSW のハンドラーを切り替えるだけで、デザイナーや PM も各
 export const fetchProducts = async ({
   query,
 }: Args): Promise<ProductsSearchResponse> => {
-  const response = await fetch(generateApiUrl(`/products/search?q=${query}`));
+  const response = await fetch(
+    generateApiUrl(`/products/search?q=${encodeURIComponent(query)}`)
+  );
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -381,7 +383,7 @@ describe("fetchProducts", () => {
 入力フォームと検索結果の表示を担当します。
 実際の API 呼び出しとデータ表示は、次に説明する`<Result>`コンポーネントに委譲しています。
 
-本筋とは関係ないですが、入力するたびに一瞬ローディング画面が表示されるチラつきを防ぐために、React v19 から登場した[`useDeferredValue`](https://ja.react.dev/reference/react/useDeferredValue)を利用しています。
+本筋とは関係ないですが、入力するたびに一瞬ローディング画面が表示されるチラつきを防ぐために、React v18 から登場した[`useDeferredValue`](https://ja.react.dev/reference/react/useDeferredValue)を利用しています。
 `useDeferredValue`は、UI の更新を遅延させることで、ユーザーの入力がスムーズに見えるようにします。
 `query !== deferredQuery`の間は「検索中」と表示し、バックグラウンドで新しい検索結果を取得しています。
 
@@ -391,7 +393,7 @@ export const ProductList = () => {
   const deferredQuery = useDeferredValue(query);
 
   return (
-    <main>
+    <section>
       <h2>商品一覧</h2>
       <label>
         検索
@@ -403,7 +405,7 @@ export const ProductList = () => {
       </label>
       {query !== deferredQuery ? <span>検索中</span> : null}
       <Result query={deferredQuery} />
-    </main>
+    </section>
   );
 };
 ```
@@ -426,11 +428,11 @@ type Props = {
 
 export const Result: FC<Props> = ({ query }: Props) => {
   return (
-    <Error Boundary fallback={<div>商品一覧でエラーが発生しました</div>}>
+    <ErrorBoundary fallback={<div>商品一覧でエラーが発生しました</div>}>
       <Suspense fallback={<div>商品一覧を読み込み中...</div>}>
         <Inner query={query} />
       </Suspense>
-    </Error Boundary>
+    </ErrorBoundary>
   );
 };
 
@@ -768,11 +770,11 @@ export const Cart = () => {
 ```tsx
 export const Content = () => {
   return (
-    <Error Boundary fallback={<div>カートの取得に失敗しました。</div>}>
+    <ErrorBoundary fallback={<div>カートの取得に失敗しました。</div>}>
       <Suspense fallback={<div>カートの読み込み中...</div>}>
         <Inner />
       </Suspense>
-    </Error Boundary>
+    </ErrorBoundary>
   );
 };
 
@@ -819,11 +821,11 @@ export const Quote = () => {
 ```tsx
 export const Content = () => {
   return (
-    <Error Boundary fallback={<Fallback />}>
+    <ErrorBoundary fallback={<Fallback />}>
       <Suspense fallback={<Loading />}>
         <Inner />
       </Suspense>
-    </Error Boundary>
+    </ErrorBoundary>
   );
 };
 
@@ -877,7 +879,7 @@ const Loading = () => {
 
 ```tsx
 export const CheapShop = () => (
-  <Error Boundary fallback={<div>全画面エラーが発生しました</div>}>
+  <ErrorBoundary fallback={<div>全画面エラーが発生しました</div>}>
     <Suspense fallback={<div>全画面読み込み中...</div>}>
       <div>
         <h1>Super coolなECサイト</h1>
@@ -886,7 +888,7 @@ export const CheapShop = () => (
         <Quote />
       </div>
     </Suspense>
-  </Error Boundary>
+  </ErrorBoundary>
 );
 ```
 
@@ -1042,11 +1044,11 @@ export const TestProvider = ({ children }: Props) => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Error Boundary fallback={<div>全画面エラー</div>}>
+      <ErrorBoundary fallback={<div>全画面エラー</div>}>
         <Suspense fallback={<div>全画面読み込み中...</div>}>
           {children}
         </Suspense>
-      </Error Boundary>
+      </ErrorBoundary>
     </QueryClientProvider>
   );
 };
@@ -1070,11 +1072,11 @@ export const customRender = (
 it("商品が表示される", async () => {
   render(
     <QueryClientProvider client={queryClient}>
-      <Error Boundary fallback={<div>エラー</div>}>
+      <ErrorBoundary fallback={<div>エラー</div>}>
         <Suspense fallback={<div>読み込み中</div>}>
           <Result query="iPhone" />
         </Suspense>
-      </Error Boundary>
+      </ErrorBoundary>
     </QueryClientProvider>
   );
   expect(await screen.findByText("iPhone 15 Pro")).toBeInTheDocument();
