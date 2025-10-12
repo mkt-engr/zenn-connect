@@ -126,14 +126,14 @@ export const CheapShop = () => {
 例えば、商品一覧とカートのデータ取得は完了していても、
 今日の名言の API だけが遅い場合、ユーザーは何も操作できません。
 
-[全画面ローディングの Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-cheapshop--loading)
+全画面ローディングの Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-cheapshop--loading)です。
 
 #### 2. 1 つのエラーで全機能が使用不可になる
 
 優先度の低い「今日の名言」の API がエラーになっただけで、
 商品一覧もカートも含めた画面全体が「エラーが発生しました」になります。
 
-[全画面エラーの Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-cheapshop--error)
+全画面エラーの Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-cheapshop--error)です。
 
 ユーザーから見ると下記のような不便さがあります。
 
@@ -689,8 +689,6 @@ type Story = StoryObj<typeof meta>;
 
 #### 商品がある場合（Default）
 
-[商品がある場合の Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--default)
-
 商品が 3 件表示される状態です。
 実際の UI でユーザーが商品を検索して結果が表示された状態を再現します。
 
@@ -721,9 +719,9 @@ export const Default: Story = {
 };
 ```
 
-#### 商品がない場合（NoProduct）
+商品がある場合の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--default)です。
 
-[商品がない場合の Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--no-product)
+#### 商品がない場合（NoProduct）
 
 検索結果が 0 件の場合、「商品がありませんでした。」というメッセージが表示されます。
 
@@ -744,9 +742,9 @@ export const NoProduct: Story = {
 };
 ```
 
-#### ローディング中（Loading）
+商品がない場合の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--no-product)です。
 
-[ローディング中の Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--loading)
+#### ローディング中（Loading）
 
 API 通信中の状態です。
 `<Suspense>`の fallback として「商品一覧を読み込み中...」が表示されます。
@@ -761,9 +759,9 @@ export const Loading: Story = {
 };
 ```
 
-#### エラー（Error）
+ローディング中の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--loading)です。
 
-[エラーの Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--error)
+#### エラー（Error）
 
 API でエラーが発生した場合の状態です。
 `<ErrorBoundary>`の fallback として「商品一覧でエラーが発生しました」が表示されます。
@@ -777,6 +775,8 @@ export const Error: Story = {
   },
 };
 ```
+
+エラーの Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--error)です。
 
 ## カートと今日の名言のコンポーネントの実装
 
@@ -831,8 +831,7 @@ const Inner = () => {
 };
 ```
 
-[カートの Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-cart--default)
-
+カートの Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-cart--default)です。
 Storybook では、カートの 4 つの状態（商品あり/なし/ローディング/エラー）を確認できます。
 
 ### 今日の名言
@@ -892,8 +891,7 @@ const Loading = () => {
 };
 ```
 
-[今日の名言の Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-quote--default)
-
+今日の名言の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-quote--default)です。
 Storybook では、今日の名言の 4 つの状態（成功/ローディング/エラー）を確認できます。
 
 ### カートと今日の名言の実装のポイント
@@ -974,7 +972,7 @@ export const ErrorOnQuote: Story = {
 };
 ```
 
-[ErrorOnQuote の Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop--error-on-quote)
+ErrorOnQuote の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop--error-on-quote)です。
 
 このように、ErrorBoundary と Suspense を適切に配置することで、エラーの影響範囲を最小限に抑え、ユーザー体験を大きく向上させることができます。
 
