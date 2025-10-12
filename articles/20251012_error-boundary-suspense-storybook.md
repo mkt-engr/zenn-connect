@@ -875,7 +875,7 @@ Storybook では、今日の名言の 4 つの状態（成功/ローディング
 これまで個別に実装してきた 3 つのコンポーネントを組み込みます。
 ここでは、「よくない例」の`<CheapShop>`と「改善例」の`<Shop>`を比較します。
 
-### よくない例 CheapShop の実装
+### CheapShop のよくない実装例
 
 `<ErrorBoundary>`と`<Suspense>`がトップレベルにのみ配置されています。
 `<Cart>`、`<ProductList>`、`<Quote>`の各コンポーネント内部には`<ErrorBoundary>`と`<Suspense>`がありません。
@@ -895,7 +895,7 @@ export const CheapShop = () => (
 );
 ```
 
-### 改善例 Shop の実装
+### Shop の改善された実装
 
 各コンポーネント（`<Cart>`、`<ProductList>`、`<Quote>`）が独立して`<ErrorBoundary>`と`<Suspense>`を持っているため、**1 つのコンポーネントがエラーやローディング状態でも、他のコンポーネントは正常に動作します。**
 
