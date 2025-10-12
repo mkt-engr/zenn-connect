@@ -718,7 +718,7 @@ export const Default: Story = {
 };
 ```
 
-<!-- TODO: 商品がある場合の画像を追加 -->
+![商品がある場合の画面](/images/202510XX_article-error-boundary-suspense-msw-storybook-test/features-Shop-ProductList-Result-Default.png)
 
 商品がある場合の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--default)です。
 
@@ -743,8 +743,6 @@ export const NoProduct: Story = {
 };
 ```
 
-<!-- TODO: 商品がない場合の画像を追加 -->
-
 商品がない場合の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--no-product)です。
 
 #### ローディング中（Loading）
@@ -762,8 +760,6 @@ export const Loading: Story = {
 };
 ```
 
-<!-- TODO: ローディング中の画像を追加 -->
-
 ローディング中の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--loading)です。
 
 #### エラー（Error）
@@ -780,8 +776,6 @@ export const Error: Story = {
   },
 };
 ```
-
-<!-- TODO: エラーの画像を追加 -->
 
 エラーの Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--error)です。
 
