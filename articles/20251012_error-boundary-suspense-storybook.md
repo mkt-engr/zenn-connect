@@ -1,5 +1,5 @@
 ---
-title: "Error Boundary と Suspense の配置で実現する、テスト・Storybook・UX を考慮した React コンポーネント設計"
+title: "Error Boundary と Suspense の配置で実現する、テスト・Storybook・UX考慮の React コンポーネント設計"
 emoji: "😊"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [React, Test, Storybook]
