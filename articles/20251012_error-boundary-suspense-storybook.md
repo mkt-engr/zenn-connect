@@ -895,7 +895,7 @@ export const CheapShop = () => (
 );
 ```
 
-### Shop の改善された実装
+### Shop コンポーネントの実装の改善
 
 各コンポーネント（`<Cart>`、`<ProductList>`、`<Quote>`）が独立して`<ErrorBoundary>`と`<Suspense>`を持っているため、**1 つのコンポーネントがエラーやローディング状態でも、他のコンポーネントは正常に動作します。**
 
