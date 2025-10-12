@@ -716,7 +716,7 @@ export const Default: Story = {
 };
 ```
 
-商品がある場合の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--default)です。
+商品がある場合の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--default)です。
 
 #### 商品がない場合（NoProduct）
 
@@ -739,7 +739,7 @@ export const NoProduct: Story = {
 };
 ```
 
-商品がない場合の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--no-product)です。
+商品がない場合の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--no-product)です。
 
 #### ローディング中（Loading）
 
@@ -756,7 +756,7 @@ export const Loading: Story = {
 };
 ```
 
-ローディング中の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--loading)です。
+ローディング中の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--loading)です。
 
 #### エラー（Error）
 
@@ -773,7 +773,7 @@ export const Error: Story = {
 };
 ```
 
-エラーの Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-result--error)です。
+エラーの Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--error)です。
 
 ## カートと今日の名言のコンポーネントの実装
 
@@ -893,14 +893,11 @@ Storybook では、今日の名言の 4 つの状態（成功/ローディング
 
 ### カートと今日の名言の実装のポイント
 
-カートと今日の名言のコンポーネントは、商品一覧と同じパターンで実装されています。
-
-**共通のポイント：**
+カートと今日の名言のコンポーネントは、下記のような 3 つの観点から商品一覧と同じパターンで実装されています。
 
 - `<Content>`コンポーネントが`<ErrorBoundary>`と`<Suspense>`を内包
 - カスタムフックで`useSuspenseQuery`を使用してデータ取得
 - テストと Storybook で 4 つの状態（成功/データなし/ローディング/エラー）を確認可能
-- コンポーネントが独立しているため、エラーが発生しても他のセクションには影響しない
 
 ## カート、商品一覧、今日の名言のコンポーネントを組み込む
 
@@ -913,20 +910,18 @@ Storybook では、今日の名言の 4 つの状態（成功/ローディング
 `<Cart>`、`<ProductList>`、`<Quote>`の各コンポーネント内部には`<ErrorBoundary>`と`<Suspense>`がありません。
 
 ```tsx
-export const CheapShop = () => {
-  return (
-    <ErrorBoundary fallback={<div>全画面エラーが発生しました</div>}>
-      <Suspense fallback={<div>全画面読み込み中...</div>}>
-        <div>
-          <h1>Super coolなECサイト</h1>
-          <Cart />
-          <ProductList />
-          <Quote />
-        </div>
-      </Suspense>
-    </ErrorBoundary>
-  );
-};
+export const CheapShop = () => (
+  <ErrorBoundary fallback={<div>全画面エラーが発生しました</div>}>
+    <Suspense fallback={<div>全画面読み込み中...</div>}>
+      <div>
+        <h1>Super coolなECサイト</h1>
+        <Cart />
+        <ProductList />
+        <Quote />
+      </div>
+    </Suspense>
+  </ErrorBoundary>
+);
 ```
 
 ### 改善例：Shop
@@ -934,16 +929,14 @@ export const CheapShop = () => {
 各コンポーネント（`<Cart>`、`<ProductList>`、`<Quote>`）が独立して`<ErrorBoundary>`と`<Suspense>`を持っているため、**1 つのコンポーネントがエラーやローディング状態でも、他のコンポーネントは正常に動作します。**
 
 ```tsx
-export const Shop = () => {
-  return (
-    <div>
-      <h1>Super coolなECサイト</h1>
-      <Cart />
-      <ProductList />
-      <Quote />
-    </div>
-  );
-};
+export const Shop = () => (
+  <div>
+    <h1>Super coolなECサイト</h1>
+    <Cart />
+    <ProductList />
+    <Quote />
+  </div>
+);
 ```
 
 ### 今日の名言のみエラーになっている場合でも、その他の機能は使えることを確認
@@ -951,9 +944,9 @@ export const Shop = () => {
 「よくない例」の`<CheapShop>`と「改善例」の`<Shop>`で、今日の名言がエラーになった場合の動作を Storybook で比較します。
 
 `<Shop>`では、今日の名言の API がエラーになっても、その部分だけがエラー表示になります。
-一方**カートと商品一覧は正常に表示され、ユーザーは EC サイトの主要機能を問題なく利用できます。**
+一方、カートと商品一覧は正常に表示され、ユーザーは EC サイトの主要機能を問題なく利用できます。
 
-優先度の低い機能のエラーが、重要な機能に影響を与えないため、ユーザー体験が大きく向上します。
+優先度の低い今日の名言のセクションで発生したのエラーが、重要な機能に影響を与えないため、ユーザー体験が大きく向上します。
 
 ![今日の名言だけエラーになっている画像](/images/202510XX_article-error-boundary-suspense-msw-storybook-test/total-view-with-quota-error.png)
 
