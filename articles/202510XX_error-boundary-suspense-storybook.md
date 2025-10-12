@@ -72,7 +72,7 @@ Next.js や RSC は使っていないのでご注意ください。
 
 なお、ダミーの API として[DummyJSON](https://dummyjson.com/docs)を利用しています。
 
-実装のコードは[こちらのブランチ](https://github.com/mkt-engr/react-vite-error-boundary-suspense-msw-storybook-test/tree/article/error-boundary-suspense-demo)で確認できます。
+実装のコードは[こちら](https://github.com/mkt-engr/react-vite-error-boundary-suspense-msw-storybook-test/tree/article/error-boundary-suspense-demo)のリポジトリで確認できます。
 
 ## 題材
 
