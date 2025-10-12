@@ -1,5 +1,5 @@
 ---
-title: "Error Boundary/Suspenseはどこに置く？テスト・Storybook・UXのためのReactコンポーネント設計"
+title: "Error Boundary/Suspenseはどこに置く？ テスト・Storybook・UXのためのReactコンポーネント設計"
 emoji: "😊"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [React, Test, Storybook]
@@ -9,7 +9,7 @@ published: false
 ## はじめに
 
 Error Boundary と Suspense をどこに置くか悩みませんか？
-かつての自分はここを外していて、テストが書きづらい、1 つのエラーで全体が落ちる といった問題に苦しみました。
+かつての自分はこの設計をうまくできず、テストが書きづらい、1 つのエラーで全体が落ちる といった問題に苦しみました。
 本記事では、その設計が
 
 - テストの書きやすさ
@@ -115,7 +115,7 @@ export const CheapShop = () => {
 
 全画面エラーの Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-cheapshop--error)です。
 
-ユーザーから見ると下記のような不便さがあります。
+ユーザーから見ると下記のようなユーザー体験の低下があります。
 
 - 本日の名言でエラーが発生すると、本来使えるはずの機能（商品閲覧・カート）が使えない
 - どこでエラーが起きたのかわからない
@@ -799,8 +799,7 @@ const Inner = () => {
 };
 ```
 
-カートの Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-cart--default)です。
-Storybook では、カートの 4 つの状態（商品あり/なし/ローディング/エラー）を確認できます。
+[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-cart--default)ではカートの 4 つの状態（商品あり/なし/ローディング/エラー）を確認できます。
 
 ### 今日の名言
 
@@ -859,8 +858,7 @@ const Loading = () => {
 };
 ```
 
-今日の名言の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-quote--default)です。
-Storybook では、今日の名言の 4 つの状態（成功/ローディング/エラー）を確認できます。
+[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-quote--default)では今日の名言の 4 つの状態（成功/ローディング/エラー）を確認できます。
 
 ### カートと今日の名言の実装のポイント
 
@@ -897,7 +895,7 @@ export const CheapShop = () => (
 
 ### Shop コンポーネントの実装の改善
 
-各コンポーネント（`<Cart>`、`<ProductList>`、`<Quote>`）が独立して`<ErrorBoundary>`と`<Suspense>`を持っているため、**1 つのコンポーネントがエラーやローディング状態でも、他のコンポーネントは正常に動作します。**
+各コンポーネント（`<Cart>`、`<ProductList>`、`<Quote>`）が独立して`<ErrorBoundary>`と`<Suspense>`を持っているため、1 つのコンポーネントがエラーやローディング状態でも、他のコンポーネントは正常に動作します。
 
 ```tsx
 export const Shop = () => (
