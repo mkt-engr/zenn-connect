@@ -75,7 +75,7 @@ Next.js や RSC は使っていないのでご注意ください。
 ### よくない例
 
 Error Boundary や Suspense を知った当初は便利だなーと思いつつ、使い方がよくわかっていませんでした。
-具体的には下記のように、コンポーネントのトップの要素にのみ`<Error Boundary>`と`<Suspense>` をラップする形をよく採用していました。
+具体的には下記のように、コンポーネントのトップの要素にのみ`<ErrorBoundary>`と`<Suspense>` をラップする形をよく採用していました。
 （`<Cart>`などのコンポーネントには含まれていない）
 
 ```tsx
@@ -123,7 +123,7 @@ export const CheapShop = () => {
 #### コンポーネント単体のテスト・Storybook が書きにくい
 
 `<Cart />`コンポーネント単体でテストを書く場合、
-`<Cart />`コンポーネントの親コンポーネントにあった`<Error Boundary>`と`<Suspense>`がないため、ローディングやエラーのテストや Storybook が書きづらくなります。
+`<Cart />`コンポーネントの親コンポーネントにあった`<ErrorBoundary>`と`<Suspense>`がないため、ローディングやエラーのテストや Storybook が書きづらくなります。
 
 例えば下記のようなカートを表示するコンポーネントの単体テストを考えます。
 なお、useItem の内部では`TanStack Query`の`useSuspenseQuery`を使ってカートの情報を取得しています。
@@ -165,7 +165,7 @@ it("カートに商品が表示されること", () => {
 
 カート、商品一覧、今日の名言で共通する実装パターンは以下の通りです。
 
-API をコールするコンポーネントの親コンポーネントに`<Error Boundary>`と`<Suspense>`をラップさせます。
+API をコールするコンポーネントの親コンポーネントに`<ErrorBoundary>`と`<Suspense>`をラップさせます。
 こうすることでエラーとローディングの範囲を限定することができます。
 
 なお Error Boundary の実装は[こちら](https://ja.react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)を参考にしています。
@@ -223,7 +223,7 @@ const Loading = () => <div>データを取得中です。</div>;
 
 #### 2. テストと Storybook の書きやすさ
 
-各コンポーネントが`<Error Boundary>`と`<Suspense>`を内包しているため、
+各コンポーネントが`<ErrorBoundary>`と`<Suspense>`を内包しているため、
 単体テストで以下の状態を簡単にテストできます。
 
 ```tsx
@@ -418,7 +418,7 @@ export const ProductList = () => {
 
 この設計のポイントは下記の 3 つです。
 
-1. `<Result>`コンポーネントが`<Error Boundary>`と`<Suspense>`を持つことで、このコンポーネント単体でテストや Storybook が作成できます
+1. `<Result>`コンポーネントが`<ErrorBoundary>`と`<Suspense>`を持つことで、このコンポーネント単体でテストや Storybook が作成できます
 2. 実際のデータ取得と表示ロジックは`<Inner>`コンポーネントに分離し、責任を明確化しています
 3. エラーやローディングの処理を`<Inner>`から分離することで、`<Inner>`は「データをどう表示するか」だけに集中できます
 
@@ -473,7 +473,7 @@ const Inner: FC<Props> = ({ query }) => {
 
 TanStack Query の`useSuspenseQuery`を使っています。
 `useSuspenseQuery`は、ローディング中は自動的に親の`<Suspense>`の fallback を表示し、
-エラー時は自動的に親の`<Error Boundary>`の fallback を表示します。
+エラー時は自動的に親の`<ErrorBoundary>`の fallback を表示します。
 そのため、コンポーネント側でローディングやエラーの状態を管理する必要がなく、`data`のみを返しています。
 
 ```ts
@@ -497,7 +497,7 @@ export const useProducts = ({ query }: Args) => {
 ### テスト
 
 `<Result>`コンポーネントの 4 つの状態をテストします。
-`<Error Boundary>`と`<Suspense>`が内包されているため、このコンポーネント単体でローディングやエラーのテストが可能です。
+`<ErrorBoundary>`と`<Suspense>`が内包されているため、このコンポーネント単体でローディングやエラーのテストが可能です。
 
 下記の 4 つのテストを実装します。
 
@@ -598,7 +598,7 @@ describe("Result", () => {
 
 #### エラー
 
-API でエラーが発生した場合は`<Error Boundary>`の fallback が表示されることを確認します。
+API でエラーが発生した場合は`<ErrorBoundary>`の fallback が表示されることを確認します。
 ここでは 500 エラーを想定していますが、404 やネットワークエラーなど他のエラーでも同様に動作します。
 
 ```tsx
@@ -732,7 +732,7 @@ export const Loading: Story = {
 #### エラー（Error）
 
 API でエラーが発生した場合の状態です。
-`<Error Boundary>`の fallback に設定している「商品一覧でエラーが発生しました」が表示されます。
+`<ErrorBoundary>`の fallback に設定している「商品一覧でエラーが発生しました」が表示されます。
 
 ```tsx
 export const Error: Story = {
@@ -749,7 +749,7 @@ export const Error: Story = {
 ## カートと今日の名言のコンポーネントの実装
 
 商品一覧と同様のパターンなので簡単に説明します。
-各コンポーネントが`<Error Boundary>`と`<Suspense>`を内包することで、独立してテストと Storybook が作成できます。
+各コンポーネントが`<ErrorBoundary>`と`<Suspense>`を内包することで、独立してテストと Storybook が作成できます。
 
 ### カート
 
@@ -766,7 +766,7 @@ export const Cart = () => {
 };
 ```
 
-`<Content>`コンポーネントが`<Error Boundary>`と`<Suspense>`を内包し、エラーとローディングの範囲を局所化しています。
+`<Content>`コンポーネントが`<ErrorBoundary>`と`<Suspense>`を内包し、エラーとローディングの範囲を局所化しています。
 
 ```tsx
 export const Content = () => {
@@ -818,7 +818,7 @@ export const Quote = () => {
 };
 ```
 
-`<Content>`コンポーネントが`<Error Boundary>`と`<Suspense>`を内包し、エラーとローディングの範囲を局所化しています。
+`<Content>`コンポーネントが`<ErrorBoundary>`と`<Suspense>`を内包し、エラーとローディングの範囲を局所化しています。
 
 ```tsx
 export const Content = () => {
@@ -866,7 +866,7 @@ Storybook では、今日の名言の 4 つの状態（成功/ローディング
 
 カートと今日の名言のコンポーネントは、商品一覧と同じパターンで実装されています。
 
-- `<Content>`コンポーネントが`<Error Boundary>`と`<Suspense>`を内包
+- `<Content>`コンポーネントが`<ErrorBoundary>`と`<Suspense>`を内包
 - カスタムフックで`useSuspenseQuery`を使用してデータ取得
 - テストと Storybook で 4 つの状態（成功/データなし/ローディング/エラー）を確認可能
 
@@ -877,8 +877,8 @@ Storybook では、今日の名言の 4 つの状態（成功/ローディング
 
 ### 最初に示したよくない例：CheapShop
 
-`<Error Boundary>`と`<Suspense>`がトップレベルにのみ配置されています。
-`<Cart>`、`<ProductList>`、`<Quote>`の各コンポーネント内部には`<Error Boundary>`と`<Suspense>`がありません。
+`<ErrorBoundary>`と`<Suspense>`がトップレベルにのみ配置されています。
+`<Cart>`、`<ProductList>`、`<Quote>`の各コンポーネント内部には`<ErrorBoundary>`と`<Suspense>`がありません。
 
 ```tsx
 export const CheapShop = () => (
@@ -897,7 +897,7 @@ export const CheapShop = () => (
 
 ### 改善例：Shop
 
-各コンポーネント（`<Cart>`、`<ProductList>`、`<Quote>`）が独立して`<Error Boundary>`と`<Suspense>`を持っているため、**1 つのコンポーネントがエラーやローディング状態でも、他のコンポーネントは正常に動作します。**
+各コンポーネント（`<Cart>`、`<ProductList>`、`<Quote>`）が独立して`<ErrorBoundary>`と`<Suspense>`を持っているため、**1 つのコンポーネントがエラーやローディング状態でも、他のコンポーネントは正常に動作します。**
 
 ```tsx
 export const Shop = () => (
@@ -943,7 +943,7 @@ ErrorOnQuote の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbu
 
 ### 基本的な考え方
 
-API をコールするコンポーネントの親コンポーネントに`<Error Boundary>`と`<Suspense>`を配置することで、エラーとローディングの範囲を限定できます。
+API をコールするコンポーネントの親コンポーネントに`<ErrorBoundary>`と`<Suspense>`を配置することで、エラーとローディングの範囲を限定できます。
 
 ### このコンポーネント設計で得られること
 
