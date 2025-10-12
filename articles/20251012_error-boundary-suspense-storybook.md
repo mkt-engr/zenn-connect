@@ -8,8 +8,7 @@ published: false
 
 ## はじめに
 
-Error Boundary と Suspense をどこに置くか悩みませんか？
-かつての自分はこの設計をうまくできず、テストが書きづらい、1 つのエラーで全体が落ちる といった問題に苦しみました。
+Error Boundary と Suspense をどこに置くか悩みませんか？かつての自分はこの設計をうまくできず、テストが書きづらい、1 つのエラーで全体が落ちる といった問題に苦しみました。
 本記事では、その設計が
 
 - テストの書きやすさ
@@ -18,9 +17,7 @@ Error Boundary と Suspense をどこに置くか悩みませんか？
 
 にどう影響するかを、実装例を通じて紹介します。
 
-「全体を 1 つの Error Boundary でラップ」という私がよくやってしまっていたよくないパターンと、
-「セクションごとに個別にラップ」するパターンを比較しながら、
-適切な配置について説明していきます。
+「全体を 1 つの Error Boundary でラップ」という私がよくやってしまっていたよくないパターンと、「セクションごとに個別にラップ」するパターンを比較しながら、適切な配置について説明していきます。
 
 ### 対象読者
 
@@ -81,7 +78,7 @@ Error Boundary や Suspense を知った当初は便利だなーと思いつつ�
 ```tsx
 export const CheapShop = () => {
   return (
-    <Error Boundary fallback={<div>全画面エラーが発生しました</div>}>
+    <ErrorBoundary fallback={<div>全画面エラーが発生しました</div>}>
       <Suspense fallback={<div>全画面読み込み中...</div>}>
         <div>
           <h1>Super coolなECサイト</h1>
@@ -90,7 +87,7 @@ export const CheapShop = () => {
           <Quote />
         </div>
       </Suspense>
-    </Error Boundary>
+    </ErrorBoundary>
   );
 };
 ```
