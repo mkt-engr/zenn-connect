@@ -2,7 +2,7 @@
 title: "Error Boundary/Suspenseはどこに置く？ テスト・Storybook・UXのためのReactコンポーネント設計"
 emoji: "😊"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: [React, Test, Storybook]
+topics: [React, Vitest, Storybook]
 published: false
 ---
 
