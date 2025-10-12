@@ -199,7 +199,7 @@ export const Content: FC<Props> = (props) => (
   </ErrorBoundary>
 );
 
-const Content: FC<Props> = (props) => {
+const Inner: FC<Props> = (props) => {
   //APIをコールしてデータを取得
   const { data } = useContent();
 
@@ -322,6 +322,8 @@ export const fetchProducts = async ({
 - 異常系
   - HTTP エラーが起きた場合
   - 正常にレスポンスが返ってきたが、スキーマに違反する場合
+
+なお、テストで使用している`generateProductsSearchMock`と`buildGetProductsSearchHandler`については、[備考 - モックの生成関数と MSW ハンドラのビルダー](#モックの生成関数と-msw-ハンドラのビルダー)セクションを参照してください。
 
 ```ts
 describe("fetchProducts", () => {
@@ -447,11 +449,11 @@ export const ProductList = () => {
 `<Result>`コンポーネントは、実際の API 呼び出しとデータ表示を担当します。
 `<ProductList>`から受け取った`query`を使って商品を検索します。
 
-**この設計のポイント：**
+この設計のポイントは下記の 3 つです。
 
-- `<Result>`コンポーネントが`<ErrorBoundary>`と`<Suspense>`を持つことで、このコンポーネント単体でテストや Storybook が作成できます
-- 実際のデータ取得と表示ロジックは`<Inner>`コンポーネントに分離し、責任を明確化しています
-- エラーやローディングの処理を`<Inner>`から分離することで、`<Inner>`は「データをどう表示するか」だけに集中できます
+1. `<Result>`コンポーネントが`<ErrorBoundary>`と`<Suspense>`を持つことで、このコンポーネント単体でテストや Storybook が作成できます
+2. 実際のデータ取得と表示ロジックは`<Inner>`コンポーネントに分離し、責任を明確化しています
+3. エラーやローディングの処理を`<Inner>`から分離することで、`<Inner>`は「データをどう表示するか」だけに集中できます
 
 ```tsx
 type Props = {
@@ -530,7 +532,7 @@ export const useProducts = ({ query }: Args) => {
 `<Result>`コンポーネントの 4 つの状態をテストします。
 `<ErrorBoundary>`と`<Suspense>`が内包されているため、このコンポーネント単体でローディングやエラーのテストが可能です。
 
-下記の 4 つのテストを実装します：
+下記の 4 つのテストを実装します。
 
 - 商品がある場合
 - 商品がない場合
@@ -546,7 +548,7 @@ export const useProducts = ({ query }: Args) => {
 #### 商品がある場合
 
 商品が 1 件ある場合のテストです。
-このテストでは以下を確認します：
+このテストでは以下を確認します。
 
 - 商品情報が正しく表示される
 - 商品件数が正しく表示される
@@ -651,7 +653,7 @@ describe("Result", () => {
 `<Result>`コンポーネントの 4 つの状態を Storybook で確認できるようにします。
 MSW を使って API のレスポンスをモックすることで、各状態を簡単に再現できます。
 
-下記の 4 つのストーリーを実装します：
+下記の 4 つのストーリーを実装します。
 
 - 商品がある場合（Default）
 - 商品がない場合（NoProduct）
@@ -716,6 +718,8 @@ export const Default: Story = {
 };
 ```
 
+<!-- TODO: 商品がある場合の画像を追加 -->
+
 商品がある場合の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--default)です。
 
 #### 商品がない場合（NoProduct）
@@ -739,6 +743,8 @@ export const NoProduct: Story = {
 };
 ```
 
+<!-- TODO: 商品がない場合の画像を追加 -->
+
 商品がない場合の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--no-product)です。
 
 #### ローディング中（Loading）
@@ -756,6 +762,8 @@ export const Loading: Story = {
 };
 ```
 
+<!-- TODO: ローディング中の画像を追加 -->
+
 ローディング中の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--loading)です。
 
 #### エラー（Error）
@@ -772,6 +780,8 @@ export const Error: Story = {
   },
 };
 ```
+
+<!-- TODO: エラーの画像を追加 -->
 
 エラーの Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--error)です。
 
