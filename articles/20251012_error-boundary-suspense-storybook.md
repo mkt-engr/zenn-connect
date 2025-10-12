@@ -159,7 +159,7 @@ it("カートに商品が表示されること", () => {
 });
 ```
 
-## 改善案 - Error Boundary / Suspense の局所化設計
+## 改善案 Error Boundary と Suspense の局所化設計
 
 ### コンポーネント設計の方針
 
@@ -875,7 +875,7 @@ Storybook では、今日の名言の 4 つの状態（成功/ローディング
 これまで個別に実装してきた 3 つのコンポーネントを組み込みます。
 ここでは、「よくない例」の`<CheapShop>`と「改善例」の`<Shop>`を比較します。
 
-### 最初に示したよくない例 - CheapShop
+### よくない例 CheapShop の実装
 
 `<ErrorBoundary>`と`<Suspense>`がトップレベルにのみ配置されています。
 `<Cart>`、`<ProductList>`、`<Quote>`の各コンポーネント内部には`<ErrorBoundary>`と`<Suspense>`がありません。
@@ -895,7 +895,7 @@ export const CheapShop = () => (
 );
 ```
 
-### 改善例 - Shop
+### 改善例 Shop の実装
 
 各コンポーネント（`<Cart>`、`<ProductList>`、`<Quote>`）が独立して`<ErrorBoundary>`と`<Suspense>`を持っているため、**1 つのコンポーネントがエラーやローディング状態でも、他のコンポーネントは正常に動作します。**
 
