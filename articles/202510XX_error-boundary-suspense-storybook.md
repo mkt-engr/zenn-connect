@@ -748,7 +748,7 @@ export const NoProduct: Story = {
 #### ローディング中（Loading）
 
 API 通信中の状態です。
-`<Suspense>`の fallback として「商品一覧を読み込み中...」が表示されます。
+`<Suspense>`の fallback に設定している「商品一覧を読み込み中...」が表示されます。
 
 ```tsx
 export const Loading: Story = {
@@ -765,7 +765,7 @@ export const Loading: Story = {
 #### エラー（Error）
 
 API でエラーが発生した場合の状態です。
-`<ErrorBoundary>`の fallback として「商品一覧でエラーが発生しました」が表示されます。
+`<ErrorBoundary>`の fallback に設定している「商品一覧でエラーが発生しました」が表示されます。
 
 ```tsx
 export const Error: Story = {
