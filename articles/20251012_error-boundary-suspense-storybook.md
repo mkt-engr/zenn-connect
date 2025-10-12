@@ -115,7 +115,7 @@ export const CheapShop = () => {
 
 全画面エラーの Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-cheapshop--error)です。
 
-ユーザーから見ると下記のようなユーザー体験の低下があります。
+ユーザーの立場では、下記のようなユーザー体験が損なわれる可能性があります。
 
 - 本日の名言でエラーが発生すると、本来使えるはずの機能（商品閲覧・カート）が使えない
 - どこでエラーが起きたのかわからない
