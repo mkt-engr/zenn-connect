@@ -159,7 +159,7 @@ it("カートに商品が表示されること", () => {
 });
 ```
 
-## 改善案 Error Boundary と Suspense の局所化設計
+## ErrorBoundary と Suspense の配置場所の改善案
 
 ### コンポーネント設計の方針
 
