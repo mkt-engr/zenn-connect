@@ -126,14 +126,14 @@ export const CheapShop = () => {
 例えば、商品一覧とカートのデータ取得は完了していても、
 今日の名言の API だけが遅い場合、ユーザーは何も操作できません。
 
-[全画面ローディングの Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-cheapshop-cheapshop--loading)
+[全画面ローディングの Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-cheapshop--loading)
 
 #### 2. 1 つのエラーで全機能が使用不可になる
 
 優先度の低い「今日の名言」の API がエラーになっただけで、
 商品一覧もカートも含めた画面全体が「エラーが発生しました」になります。
 
-[全画面エラーの Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-cheapshop-cheapshop--error)
+[全画面エラーの Story](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-cheapshop--error)
 
 ユーザーから見ると下記のような不便さがあります。
 
