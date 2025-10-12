@@ -68,7 +68,9 @@ Next.js や RSC は使っていないのでご注意ください。
 今日の名言のセクションは社長がどうしてもと要望されて入れたもので、EC サイトの構成要素としては全く不要なものとします。
 :::
 
-![ECサイトの完成系の画像](/images/20251012_article-error-boundary-suspense-msw-storybook-test/total-view.jpeg)
+<p align="center">
+  <img src="/images/20251012_article-error-boundary-suspense-msw-storybook-test/total-view.jpeg" alt="ECサイトの完成系の画像" width="75%">
+</p>
 
 ## よくない Error Boundary と Suspense の使い方と問題点（自分の実例）
 
