@@ -6,26 +6,6 @@ topics: [React, Test, Storybook]
 published: false
 ---
 
-## TODO：消せ
-
-タイトルの案
-
-- Error Boundary と Suspense の配置で実現する、テスト・Storybook・UX を考慮した React コンポーネント設計
-
-- Error Boundary と Suspense の配置が導く、テストしやすく UX を考慮した React コンポーネント設計
-
-  - 第 1 候補かも
-
-- "Error Boundary と Suspense の配置で決まる、
-  コンポーネントの開発体験とユーザー体験"
-- "Error Boundary と Suspense の配置で決まる、
-  コンポーネントの開発体験とユーザー体験"
-
-- "エラー境界の局所化が生む 3 つの価値 - テスト・並列開発・UX 向上を実現する React 設計パターン ―"
-
-- "エラーとローディングの局所化、テスト、コンポーネントカタログを意識した React コンポーネント設計
-  ― Dummy API を使って Vitest と Storybook を実践しながら、ErrorBoundary / Suspense の配置を学ぶ ―"
-
 ## はじめに
 
 この記事では、Error Boundary と Suspense の配置という、
@@ -88,7 +68,7 @@ Next.js や RSC は使っていないのでご注意ください。
 今日の名言のセクションは社長がどうしてもと要望されて入れたもので、EC サイトの構成要素としては全く不要なものとします。
 :::
 
-![完成形のコード構成](/images/202510XX_article-error-boundary-suspense-msw-storybook-test/total-view.png)
+![完成形のコード構成](/images/20251012_article-error-boundary-suspense-msw-storybook-test/total-view.png)
 
 ## よくない ErrorBoundary と Suspense の使い方と問題点（自分の実例）
 
@@ -397,7 +377,7 @@ describe("fetchProducts", () => {
 
 上部は検索ボックスで、そこに入力された内容に基づいて検索を行い、下部に商品一覧を表示します。
 
-![商品一覧のセクションの画像](/images/202510XX_article-error-boundary-suspense-msw-storybook-test/product-list-default.png)
+![商品一覧のセクションの画像](/images/20251012_article-error-boundary-suspense-msw-storybook-test/product-list-default.png)
 
 #### 検索ボックスと商品一覧を表示する`<ProductList>`コンポーネント
 
@@ -718,7 +698,7 @@ export const Default: Story = {
 };
 ```
 
-![商品がある場合の画面](/images/202510XX_article-error-boundary-suspense-msw-storybook-test/features-Shop-ProductList-Result-Default.png)
+![商品がある場合の画面](/images/20251012_article-error-boundary-suspense-msw-storybook-test/features-Shop-ProductList-Result-Default.png)
 
 商品がある場合の Storybook は[こちら](https://68e2285ed2a65b4c23a54763-idqbuptadi.chromatic.com/?path=/story/features-shop-productlist-result--default)です。
 
@@ -952,7 +932,7 @@ export const Shop = () => (
 
 優先度の低い今日の名言のセクションで発生したのエラーが、重要な機能に影響を与えないため、ユーザー体験が大きく向上します。
 
-![今日の名言だけエラーになっている画像](/images/202510XX_article-error-boundary-suspense-msw-storybook-test/total-view-with-quota-error.png)
+![今日の名言だけエラーになっている画像](/images/20251012_article-error-boundary-suspense-msw-storybook-test/total-view-with-quota-error.png)
 
 今日の名言のみエラーになっているが、それ以外のカートと商品一覧は確認できる Storybook はこちらです。
 
