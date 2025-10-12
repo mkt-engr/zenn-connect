@@ -216,31 +216,31 @@ const Loading = () => <div>データを取得中です。</div>;
 - 商品一覧が表示されていれば、カートの読み込みが遅くてもユーザーは商品を閲覧できる
 - エラーが発生した箇所が明確にわかる
 
-また、セクションごとに fallback を最適化できます：
+また、セクションごとに fallback を最適化できます。
 
-- 重要な商品一覧：詳細なスケルトンと丁寧なエラーメッセージ＋リトライボタン
-- 優先度の低い今日の名言：シンプルなローディング表示と、エラー時は非表示で OK
+- 重要な商品一覧では、詳細なスケルトンと丁寧なエラーメッセージ＋リトライボタンを表示
+- 優先度の低い今日の名言では、シンプルなローディング表示と、エラー時は非表示で OK
 
 #### 2. テストと Storybook の書きやすさ
 
 各コンポーネントが`<Error Boundary>`と`<Suspense>`を内包しているため、
-単体テストで以下の状態を簡単にテストできます：
+単体テストで以下の状態を簡単にテストできます。
 
 ```tsx
 describe("Cart", () => {
-  it("正常時：カートの商品が表示される", () => {
+  it("正常時、カートの商品が表示される", () => {
     server.use(/* 成功レスポンス */);
     render(<Cart />);
     expect(screen.getByText("商品1")).toBeInTheDocument();
   });
 
-  it("ローディング時：ローディング表示が出る", () => {
+  it("ローディング時、ローディング表示が出る", () => {
     server.use(/* 遅延レスポンス */);
     render(<Cart />);
     expect(screen.getByText("データを取得中です。")).toBeInTheDocument();
   });
 
-  it("エラー時：エラーメッセージが表示される", () => {
+  it("エラー時、エラーメッセージが表示される", () => {
     server.use(/* エラーレスポンス */);
     render(<Cart />);
     expect(
@@ -1081,7 +1081,7 @@ export const customRender = (
 ) => render(ui, { wrapper: TestProvider, ...options });
 ```
 
-通常の`render`を使う場合、毎回 Provider を手動でラップする必要があります：
+通常の`render`を使う場合、毎回 Provider を手動でラップする必要があります。
 
 ```tsx
 // render を使う場合（冗長）
@@ -1099,7 +1099,7 @@ it("商品が表示される", async () => {
 });
 ```
 
-`customRender`を使えば、Provider のラップが自動化されシンプルになります：
+`customRender`を使えば、Provider のラップが自動化されシンプルになります。
 
 ```tsx
 // customRender を使う場合（シンプル）
