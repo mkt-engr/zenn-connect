@@ -241,7 +241,7 @@ describe("Cart", () => {
     server.use(/* エラーレスポンス */);
     render(<Cart />);
     expect(
-      screen.getByText("データの取得に失敗しました。")
+      screen.getByText("データの取得に失敗しました。"),
     ).toBeInTheDocument();
   });
 });
@@ -277,7 +277,7 @@ export const fetchProducts = async ({
   query,
 }: Args): Promise<ProductsSearchResponse> => {
   const response = await fetch(
-    generateApiUrl(`/products/search?q=${encodeURIComponent(query)}`)
+    generateApiUrl(`/products/search?q=${encodeURIComponent(query)}`),
   );
 
   if (!response.ok) {
@@ -324,7 +324,7 @@ describe("fetchProducts", () => {
       buildGetProductsSearchHandler.success({
         response: mockData,
         onRequestSearchParams,
-      })
+      }),
     );
 
     const { products, total } = await fetchProducts({ query: "test" });
@@ -345,7 +345,7 @@ describe("fetchProducts", () => {
     server.use(buildGetProductsSearchHandler.error({ status: 500 }));
 
     await expect(fetchProducts({ query: "test" })).rejects.toThrow(
-      "HTTP error! status: 500"
+      "HTTP error! status: 500",
     );
   });
 
@@ -362,11 +362,11 @@ describe("fetchProducts", () => {
     server.use(
       buildGetProductsSearchHandler.success({
         response: invalidData,
-      })
+      }),
     );
 
     await expect(fetchProducts({ query: "test" })).rejects.toThrow(
-      "Invalid products data:"
+      "Invalid products data:",
     );
   });
 });
@@ -540,7 +540,7 @@ describe("Result", () => {
           total: 1,
         }),
         onRequestSearchParams,
-      })
+      }),
     );
 
     customRender(<Result query="iPhone" />);
@@ -608,7 +608,7 @@ describe("Result", () => {
     customRender(<Result query="test" />);
 
     expect(
-      await screen.findByText("商品一覧でエラーが発生しました")
+      await screen.findByText("商品一覧でエラーが発生しました"),
     ).toBeInTheDocument();
   });
 });
@@ -947,17 +947,14 @@ API をコールするコンポーネントの親コンポーネントに`<Error
 今回紹介した Error Boundary と Suspense の適切な配置を意識したコンポーネント設計により下記のような 3 つのことが得られます。
 
 1. ユーザー体験の向上
-
    - エラーやローディングを局所化することで、一部の機能が失敗しても他の機能は正常に動作
    - 優先度の低い機能のエラーが、主要機能に影響を与えない
 
 2. テストと Storybook の書きやすさ
-
    - コンポーネント単体で 4 つの状態（成功/データなし/ローディング/エラー）をテスト可能
    - MSW を使って各状態を簡単に再現でき、デザイナーや PM も確認できる
 
 3. 並列開発のしやすさ
-
    - 各コンポーネントが独立しているため、チームメンバーが同時並行で開発できる
    - Storybook で個別に開発・確認しながら、最終的に統合できる
 
@@ -978,7 +975,7 @@ API レスポンスのモックデータを生成する関数です。
 
 ```ts
 export const generateProductsSearchMock = (
-  override?: Partial<ProductsSearchResponse>
+  override?: Partial<ProductsSearchResponse>,
 ): ProductsSearchResponse => ({
   products: [],
   total: 0,
@@ -1061,7 +1058,7 @@ export const TestProvider = ({ children }: Props) => {
 ```tsx
 export const customRender = (
   ui: ReactElement,
-  options?: Omit<RenderOptions, "wrapper">
+  options?: Omit<RenderOptions, "wrapper">,
 ) => render(ui, { wrapper: TestProvider, ...options });
 ```
 
@@ -1077,7 +1074,7 @@ it("商品が表示される", async () => {
           <Result query="iPhone" />
         </Suspense>
       </ErrorBoundary>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
   expect(await screen.findByText("iPhone 15 Pro")).toBeInTheDocument();
 });
