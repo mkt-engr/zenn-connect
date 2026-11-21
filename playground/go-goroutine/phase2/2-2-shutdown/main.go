@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+// convertImage は画像変換を想定した関数。受け取った数値を画像IDとして使い、サムネイルのファイル名を返す
+func convertImage(imageID int) string {
+	// ここでは重い処理を想定して3秒待機しているだけで、実際の処理（API呼び出し・DB保存・画像変換など）は行っていない。
+	time.Sleep(3 * time.Second)
+	return fmt.Sprintf("image_%d_thumb.jpg", imageID)
+}
+
 func worker(ctx context.Context, id int, jobs <-chan int, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -22,8 +29,9 @@ func worker(ctx context.Context, id int, jobs <-chan int, wg *sync.WaitGroup) {
 				return
 			}
 			// 開始した仕事は完了まで処理する
-			fmt.Printf("worker %d processing job %d\n", id, job)
-			time.Sleep(200 * time.Millisecond)
+			fmt.Printf("worker %d: start 画像 %d を変換\n", id, job)
+			thumbnail := convertImage(job)
+			fmt.Printf("worker %d: done %s を作成\n", id, thumbnail)
 		}
 	}
 }
@@ -46,8 +54,10 @@ func main() {
 		for job := 1; ; job++ {
 			select {
 			case <-ctx.Done():
+				fmt.Println("main: 新しい仕事の受付を止めた")
 				return
 			case jobs <- job:
+				fmt.Printf("main: job %d を渡した\n", job)
 			}
 		}
 	}()
@@ -56,7 +66,7 @@ func main() {
 	time.AfterFunc(2*time.Second, stop)
 
 	<-ctx.Done()
-	fmt.Println("shutdown requested")
+	fmt.Println("main: shutdown requested（処理中の仕事の完了を待つ）")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -69,8 +79,8 @@ func main() {
 
 	select {
 	case <-done:
-		fmt.Println("all workers stopped")
+		fmt.Println("main: all workers stopped")
 	case <-shutdownCtx.Done():
-		fmt.Println("shutdown timeout:", shutdownCtx.Err())
+		fmt.Println("main: shutdown timeout:", shutdownCtx.Err())
 	}
 }
