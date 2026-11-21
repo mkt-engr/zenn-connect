@@ -1,5 +1,5 @@
 ---
-title: "Goのgoroutineでワーカーを安全に終了する方法"
+title: "Goのgoroutine（ゴルーチン）で非同期処理を安全に終了する方法"
 emoji: "🐹"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [Go, goroutine, 並行処理]
@@ -7,6 +7,8 @@ published: false
 ---
 
 ## はじめに
+
+Go言語といえば並列処理が得意というイメージをする人が多いかもしれません。
 
 Goのgoroutineは、少ない記述で並行処理を始められる便利な仕組みです。一方で、`go` を付けて関数を起動するだけでは、終了管理や同時実行数、処理失敗時の扱いまでは考えられていません。
 
@@ -16,7 +18,7 @@ Goのgoroutineは、少ない記述で並行処理を始められる便利な仕
 2. Worker Poolで同時実行数を制御し、Graceful Shutdownを実現する
 3. 非同期メッセージ処理で、再配信や二重処理、データ整合性を考える
 
-段階を追って、単に「並行して動かす」状態から「運用を想定して制御する」状態へ改善していきます。
+段階を追って、単に「並行して動かす」状態から「運用を想定して制御する」状態へ改善します。
 
 ## goroutineとは
 
@@ -57,12 +59,12 @@ goroutineは軽量なので、数百〜数千個を同時に起動すること�
 
 この記事のコードは、Goの標準ライブラリのみを使っています。
 
-| ライブラリ | バージョン |
-| --- | --- |
-| Go | 1.27.4 |
-| sync（標準ライブラリ） | Goに同梱 |
-| context（標準ライブラリ） | Goに同梱 |
-| time（標準ライブラリ） | Goに同梱 |
+| ライブラリ                | バージョン |
+| ------------------------- | ---------- |
+| Go                        | 1.27.4     |
+| sync（標準ライブラリ）    | Goに同梱   |
+| context（標準ライブラリ） | Goに同梱   |
+| time（標準ライブラリ）    | Goに同梱   |
 
 Pub/Subなどのメッセージングサービスの具体的なSDKは使わず、ACK/NACKは概念的な例として示しています。
 
@@ -209,7 +211,6 @@ worker stopped: context canceled
 **改善の考え方：**
 goroutineを起動するだけでなく、仕事の受け渡し方と終了条件を設計する。
 
-
 ## Phase 2：Worker PoolとGraceful Shutdown
 
 Phase
@@ -339,7 +340,6 @@ Graceful Shutdownでは、単に `cancel()` を呼べばよいわけではあり
 **改善の考え方：**
 goroutineの数を制御し、停止時にも仕事を安全に扱えるようにする。
 
-
 ## Phase 3：非同期メッセージ処理とデータ整合性
 
 Phase
@@ -429,14 +429,13 @@ CREATE TABLE orders (
 **改善の考え方：**
 goroutineやWorkerの制御だけでなく、メッセージの再配信、二重実行、障害時のデータ整合性まで設計する。
 
-
 ## 3段階のまとめ
 
-| 段階 | 主な課題 | 学ぶこと |
-| --- | --- | --- |
-| Phase 1 | goroutineを起動した後の終了管理 | channel、select、WaitGroup、context |
-| Phase 2 | 同時実行数と安全な停止 | Worker Pool、Graceful Shutdown、Timeout |
-| Phase 3 | 非同期処理の失敗や重複実行 | ACK/NACK、リトライ、冪等性、DB整合性 |
+| 段階    | 主な課題                        | 学ぶこと                                |
+| ------- | ------------------------------- | --------------------------------------- |
+| Phase 1 | goroutineを起動した後の終了管理 | channel、select、WaitGroup、context     |
+| Phase 2 | 同時実行数と安全な停止          | Worker Pool、Graceful Shutdown、Timeout |
+| Phase 3 | 非同期処理の失敗や重複実行      | ACK/NACK、リトライ、冪等性、DB整合性    |
 
 goroutineを使ううえで大切なのは、単に並行して処理を実行することではありません。
 
