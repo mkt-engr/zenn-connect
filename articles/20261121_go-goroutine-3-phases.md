@@ -10,21 +10,21 @@ published: false
 
 Go言語といえば並列処理が得意というイメージをする人が多いかもしれません。
 
-Goのgoroutineは、少ない記述で並行処理を始められる便利な仕組みです。一方で、`go` を付けて関数を起動するだけでは、終了管理や同時実行数、処理失敗時の扱いまでは考えられていません。
+Goのgoroutineは、少ない記述で並行処理を始められる便利な仕組みです。一方で、`go` を付けて関数を起動するだけでは、終了の待機や同時実行数の制御、停止時の扱いは含まれません。
 
 この記事では、goroutineを使った処理を次の3段階で整理します。
 
 1. goroutineの起動と終了を管理する
-2. Worker Poolで同時実行数を制御し、Graceful Shutdownを実現する
-3. 非同期メッセージ処理で、再配信や二重処理、データ整合性を考える
+2. Worker Poolで同時実行数を制御する
+3. Graceful Shutdownで、安全に停止する
 
-段階を追って、単に「並行して動かす」状態から「運用を想定して制御する」状態へ改善します。
+段階を追って、単に「並行して動かす」状態から、終了や同時実行数を制御できる状態にしていきます。
 
 ### この記事でわかること
 
 - goroutineの起動後に、終了を待つ・止める方法（WaitGroup、channel、context）
-- Worker Poolで同時実行数を制御し、Graceful Shutdownで安全に停止する考え方
-- Pub/Subなどの非同期メッセージ処理で、ACKや冪等性をどう考えるか
+- Worker Poolで同時実行数を制御する方法
+- Graceful Shutdownで安全に停止する考え方
 
 ## goroutineとは
 
@@ -52,10 +52,10 @@ goroutineは軽量なので、数百〜数千個を同時に起動すること�
 
 - 複数のHTTPリクエストを同時に送り、すべての結果をまとめて受け取る
 - 画像変換やファイル処理など、時間のかかる処理を並行して進める
-- キューから届いた仕事を、裏のWorkerで順番に処理する（Phase 2・Phase 3で扱う内容）
+- キューから届いた仕事を、裏のWorkerで順番に処理する（Phase 2で扱う内容）
 - 処理にタイムアウトやキャンセルを設け、途中で止められるようにする（Phase 1のcontextで扱う内容）
 
-### 主に利用したライブラリとそのバージョン
+### 使用するライブラリ
 
 この記事のコードは、Goの標準ライブラリのみを使っています。
 
@@ -65,8 +65,6 @@ goroutineは軽量なので、数百〜数千個を同時に起動すること�
 | sync（標準ライブラリ）    | Goに同梱   |
 | context（標準ライブラリ） | Goに同梱   |
 | time（標準ライブラリ）    | Goに同梱   |
-
-Pub/Subなどのメッセージングサービスの具体的なSDKは使わず、ACK/NACKは概念的な例として示しています。
 
 ## Phase 1：goroutineを起動するだけでは不十分
 
@@ -98,10 +96,9 @@ main: 終了する
 
 `done job` は表示されません。`start job` も、表示されるかどうかは実行のたびに変わります。`main` が先に終わってプログラムが終了し、workerが途中で打ち切られるためです。
 
-この記事のコードでは、重い処理を想定して `time.Sleep(3 * time.Second)` で3秒待機しています。実際にAPI呼び出しやDB保存などを行うわけではなく、「1つのジョブに3秒かかる」場合の動きを確認するための待機です。実務では、ここに外部APIの呼び出しやDBへの保存、画像変換といった本物の処理が入ります。
+この記事のコードでは、重い処理を想定して `time.Sleep(3 * time.Second)` で3秒待機しています。実際にAPI呼び出しやDB保存などを行うわけではなく、「1つのジョブに3秒かかる」場合の動きを確認するための待機です。本来は、ここに外部APIの呼び出しやDBへの保存、画像変換といった処理が入ります。
 
-ただし、このコードには問題があります。`main`
-関数が終了するとプログラム自体が終了するため、起動したgoroutineの処理が完了する保証はありません。
+ただし、このコードには問題があります。`main` 関数が終了するとプログラム自体が終了するため、起動したgoroutineの処理が完了する保証はありません。
 
 goroutineを起動することと、その終了を管理することは別です。
 
@@ -137,8 +134,7 @@ func main() {
 }
 ```
 
-`Add` で待つgoroutineの数を登録し、goroutineの処理が終わったら `Done`
-を呼びます。`Wait` は登録された処理がすべて終わるまで待機します。
+`Add` で待つgoroutineの数を登録し、goroutineの処理が終わったら `Done` を呼びます。`Wait` は登録された処理がすべて終わるまで待機します。
 
 #### Add・Done・Waitの関係
 
@@ -248,7 +244,7 @@ jobs := make(chan int, 5) // バッファあり（5件までためておける�
 
 以降のコードは、まずバッファなしで説明します。
 
-バッファの大きさを変えると、`main` の送信がどう変わるかを下のデモで試せます。スライダーでバッファを動かしてみてください。
+バッファの大きさを変えると、`main` の送信がどう変わるかを下のデモで試せます。スライダーでバッファを動かせます。
 
 @[codepen](https://codepen.io/mkt-engr/pen/JoNJVmM?default-tab=result)
 
@@ -303,8 +299,7 @@ func main() {
 }
 ```
 
-`close(jobs)`によって、これ以上仕事が送られないことをWorkerに伝えます。`for range`
-はchannelが閉じられ、バッファ内の値もなくなると終了します。
+`close(jobs)` によって、これ以上仕事が送られないことをWorkerに伝えます。`for range` はchannelが閉じられ、バッファ内の値もなくなると終了します。
 
 実行結果の例です。Workerは1つだけなので、1件目が終わってから2件目が始まり、全体で約6秒かかります。
 
@@ -325,13 +320,13 @@ main: 完了
 
 ### contextでキャンセルを伝える
 
-`WaitGroup`は終了を待つ仕組みですが、処理を止める指示を出すものではありません。キャンセルを伝えるには`context` を使います。
+`WaitGroup` は終了を待つ仕組みですが、処理を止める指示を出すものではありません。キャンセルを伝えるには `context` を使います。
 
 #### どんなときに処理を止めたいのか
 
 workerは仕事を待ち続けるので、放っておくと自分では止まりません。外から「止まってほしい」と伝える必要があるのは、たとえば次のような場面です。
 
-- **アプリを停止・再起動するとき**: デプロイやスケールインのたびに、動いているworkerを止める必要があります。止める合図がなければ、`wg.Wait()` はいつまでも終わりません（Phase 2のGraceful Shutdownにつながります）。
+- **アプリを停止・再起動するとき**: デプロイやスケールインのたびに、動いているworkerを止める必要があります。止める合図がなければ、`wg.Wait()` はいつまでも終わりません（Phase 3のGraceful Shutdownにつながります）。
 - **ユーザーが操作を中断したとき**: 画像変換を依頼したあと、ユーザーがブラウザを閉じたり、キャンセルボタンを押したりした場合、結果を受け取る人はもういません。変換を続けても、CPUを無駄に使うだけです。
 - **処理が時間内に終わらないとき**: 外部APIが応答しない場合に、何十秒も待ち続けるのではなく、「5秒で諦める」ようにします。待ち続けると、workerが塞がって次の仕事を処理できなくなります。
 - **ほかの処理が失敗したとき**: 複数のAPI呼び出しを並行して行い、どれか1つが失敗したら全体が失敗になる場合、残りの呼び出しを続けても意味がありません。DBへの保存など、それ以降の処理も止めたほうが安全です。
@@ -356,7 +351,7 @@ func worker(ctx context.Context, id int, jobs <-chan int) {
 
 `select` で、キャンセル通知（`ctx.Done()`）と仕事の受信（`jobs`）を同時に待ちます。`default` を置いて何もせずループすると、CPUを消費し続けてしまうため注意が必要です。
 
-呼び出し側は `context.WithCancel`でキャンセル可能なContextを作り、`cancel()` で終了を通知できます。
+呼び出し側は `context.WithCancel` でキャンセル可能なContextを作り、`cancel()` で終了を通知できます。
 
 ```go
 func main() {
@@ -419,9 +414,9 @@ Workerが1つだと、2件目の仕事はWorkerが空くまで待たされ、動
 **改善の考え方：**
 goroutineを起動するだけでなく、仕事の受け渡し方と終了条件を設計する。
 
-## Phase 2：Worker PoolとGraceful Shutdown
+## Phase 2：Worker Poolで同時実行数を制御する
 
-Phase1ではgoroutineの起動・終了を学びました。次は、仕事が大量に届く場合を考えます。
+Phase 1ではgoroutineの起動と終了の管理を扱いました。次は、仕事が大量に届く場合を考えます。
 
 ### Workerの使われ方：バッチ型と常駐型
 
@@ -429,7 +424,7 @@ Workerの使い方には、大きく2つの形があります。
 
 **バッチ型**は、処理する仕事の数があらかじめ決まっている形です。仕事を全部渡したらchannelを閉じ、すべて終わったらプログラムも終了します。この記事のPhase 1や、このあとのWorker Poolのサンプルはこの形です。
 
-**常駐型**は、アプリの起動時にWorkerを起動しておき、停止するまで仕事を待ち続ける形です。サーバーやPub/Subの購読処理など、実務で多いのはこちらです。
+**常駐型**は、アプリの起動時にWorkerを起動しておき、停止するまで仕事を待ち続ける形です。サーバーやPub/Subの購読処理などが、この形です。
 
 ```
 起動時:  Workerを3つ起動し、jobsを待ち続ける
@@ -525,6 +520,19 @@ main: 完了                 ← 全体で約12秒
 
 3秒のジョブが10件あるので、Workerが1つなら約30秒かかります。3つなら約12秒（3件ずつ処理して4ラウンド）で終わり、かつ同時実行数は常に3以下に保たれます。なお、同時に動くworkerの表示順は実行のたびに変わります。
 
+### Phase 2のポイント
+
+- Worker Poolで同時実行数を制御する
+- Workerの数は、APIのレート制限やDB接続数などに合わせて決める
+- channelを閉じて新しい仕事がないことを伝える
+
+**改善の考え方：**
+goroutineの数を制御し、無制限に増えないようにする。
+
+## Phase 3：Graceful Shutdown
+
+Phase 2では、Worker Poolで同時実行数を制御しました。次は、そのWorkerを安全に止める方法を考えます。
+
 ### Graceful Shutdownとは
 
 サーバーやWorkerを停止するとき、いきなりプロセスを終了すると処理中の仕事が中断される可能性があります。
@@ -584,10 +592,8 @@ time.AfterFunc(2*time.Second, stop)
 シグナルを受け取るContextと、終了処理に使うContextは役割を分けると整理しやすくなります。
 
 - **signal context**：OSから停止要求が来たことを検知する
-- **shutdown context**：終了処理に許す時間を `context.WithTimeout` で制限する
+- **shutdown context**：終了処理に許す時間を `context.WithTimeout` で制限する。`context.WithTimeout(context.Background(), 10*time.Second)` のように期限を作り、その時間内に受付停止とWorkerの終了を待つ
 - **work context**：Workerや個々の処理にキャンセルを伝える。処理を中断するか、完了まで待つかはJobの性質に応じて決める
-
-シグナルを受け取った後に、`context.WithTimeout(context.Background(), 10*time.Second)` で終了期限を作り、その時間内に受付停止とWorkerの終了を待ちます。
 
 注意点は次のとおりです。
 
@@ -718,7 +724,394 @@ func main() {
 
 :::
 
-ここで注意したいのは、タイムアウトしたからといって、処理中のgoroutineが自動的に強制終了されるわけではないことです。各Workerや処理関数がContextを確認し、キャンセルに協力する設計が必要です。
+### Contextによる処理中断とタイムアウトの違い
+
+`shutdownCtx` がタイムアウトしても、GoがWorkerやgoroutineを強制終了するわけではありません。Contextは終了要求を通知する仕組みであり、処理側がその通知を確認して協力する必要があります。
+
+- `shutdownCtx`：シャットダウン処理に許す時間を管理する。`Done()` が閉じたら、待機側は期限切れを検知できる
+- `workCtx`：WorkerやJobの処理にキャンセルを伝える。処理関数に渡し、処理側が確認する
+
+2つは、別々のContextとして作ります。
+
+```go
+// 終了を待つ期限。タイムアウトすると Done() が閉じる
+shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+defer cancel()
+
+// Workerや仕事にキャンセルを伝える。workCancel() を呼ぶと Done() が閉じる
+workCtx, workCancel := context.WithCancel(context.Background())
+defer workCancel()
+```
+
+`shutdownCtx` はmainが待つ側で使い、`workCtx` はWorkerに渡します。`shutdownCtx` がタイムアウトしても、`workCtx` は自動ではキャンセルされません。
+
+例えば、Workerには `workCtx` を渡します。以下のコードの `ctx` は、この `workCtx` のことです。処理関数にも渡し、長い処理を小さな単位に分けてキャンセルを確認します。
+
+```go
+func worker(ctx context.Context, jobs <-chan Job) {
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case job, ok := <-jobs:
+            if !ok {
+                return
+            }
+            if err := process(ctx, job); err != nil {
+                if ctx.Err() != nil {
+                    return // キャンセルによる終了
+                }
+                log.Printf("job failed: %v", err)
+                // 通常のJobエラーならWorker自体は終了せず次のJobへ
+            }
+        }
+    }
+}
+
+func process(ctx context.Context, job Job) error {
+    for step := 1; step <= 8; step++ {
+        select {
+        case <-ctx.Done():
+            return ctx.Err()
+        default:
+        }
+
+        // Jobの処理を少しずつ進める（ここでは1ステップ1秒）
+        time.Sleep(1 * time.Second)
+    }
+    return nil
+}
+```
+
+この例のように、処理が定期的に `ctx.Done()` を確認すれば、キャンセル要求を受けて自分で中断できます。一方、処理関数がContextを確認しない場合や、Context非対応の処理に入り続けている場合は、キャンセル後も処理が続くことがあります。HTTPリクエストやDB処理などは、利用するAPIがContextを受け取るなら渡すことで、I/Oのキャンセルにも協力できます。
+
+また、`shutdownCtx` のタイムアウトは「終了を待つ側の期限」です。Workerを止めたい場合は、別途 `workCancel()` などで `workCtx` をキャンセルする設計が必要です。タイムアウト時にキャンセルを通知しても、Workerが即座に終了する保証はなく、最終的にはプロセスを終了する実行環境側の猶予時間・終了方針も考慮します。
+
+実際に動かして比べてみます。1件の仕事に8秒かかり、終了期限は2秒なので、必ずタイムアウトします。タイムアウトの後に `workCancel()` を呼び、その後の3秒間の様子を見ます。
+
+処理が `ctx` を確認しない場合は、キャンセルを呼んでもWorkerは止まりません。
+
+```
+main: shutdown timeout: context deadline exceeded
+main: workCancel() を呼ぶ
+worker 1: job 2 step 4/8        ← キャンセル後も処理が進む
+worker 0: job 1 step 4/8
+worker 0: job 1 step 5/8
+worker 1: job 2 step 5/8
+main: 3秒待ってもworkerが止まらない。mainが終わるとプロセスごと終了する
+```
+
+処理がステップごとに `ctx.Done()` を確認する場合は、`workCancel()` の直後に、処理を自分で中断します。
+
+```
+main: shutdown timeout: context deadline exceeded
+main: workCancel() を呼ぶ
+worker 0: job 1 step 3/8
+worker 0: job 1 を中断 (context canceled)
+worker 1: job 2 step 4/8
+worker 1: job 2 を中断 (context canceled)
+main: all workers stopped
+```
+
+2つの結果を比べると、次のようになります。
+
+| | 処理が `ctx` を確認しない | 処理が `ctx` を確認する |
+|---|---|---|
+| `workCancel()` を呼んだとき | 気づかず、最後まで処理を続ける | 次の確認のときに気づき、中断する |
+| ログ | stepが進み続ける | `job N を中断 (context canceled)` |
+| Workerの終了 | 止まらない | すぐ止まる |
+
+処理が `ctx` を確認する場合の流れを図にすると、次のようになります。`workCancel()` を呼んでも `process` が割り込まれて止まるわけではなく、次の確認のときに `ctx.Done()` が閉じていることに気づいて中断します。
+
+```mermaid
+sequenceDiagram
+    participant main
+    participant workCtx
+    participant process
+
+    Note over process: 1秒のsleep中（まだ気づかない）
+    main->>workCtx: workCancel()
+    Note over workCtx: Done() が閉じる
+    Note over process: sleepが終わるまで続く
+    process->>workCtx: 次のステップの頭で ctx.Done() を確認
+    workCtx-->>process: 閉じている
+    process-->>main: return ctx.Err()（context canceled）で中断
+```
+
+:::details タイムアウトの動作確認コード全体
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"sync"
+	"time"
+)
+
+const steps = 8 // 1件の仕事は8ステップ（1ステップ1秒）かかる想定
+
+// process は長い仕事を1秒ずつのステップに分けて進める。
+// cooperate が true のときだけ、ステップごとにctxを確認してキャンセルに協力する
+func process(ctx context.Context, id, job int, cooperate bool) error {
+	for step := 1; step <= steps; step++ {
+		if cooperate {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+		}
+		time.Sleep(1 * time.Second)
+		fmt.Printf("worker %d: job %d step %d/%d\n", id, job, step, steps)
+	}
+	return nil
+}
+
+func worker(workCtx context.Context, id int, jobs <-chan int, wg *sync.WaitGroup, cooperate bool) {
+	defer wg.Done()
+
+	for {
+		select {
+		case <-workCtx.Done():
+			fmt.Printf("worker %d: stop requested\n", id)
+			return
+		case job, ok := <-jobs:
+			if !ok {
+				return
+			}
+			fmt.Printf("worker %d: start job %d\n", id, job)
+			if err := process(workCtx, id, job, cooperate); err != nil {
+				if workCtx.Err() != nil {
+					// キャンセルまたは期限切れによる終了
+					fmt.Printf("worker %d: job %d を中断 (%v)\n", id, job, workCtx.Err())
+					return
+				}
+				// 通常のJobエラーならWorker自体は終了せず次のJobへ
+				fmt.Printf("worker %d: job %d failed: %v\n", id, job, err)
+				continue
+			}
+			fmt.Printf("worker %d: done job %d\n", id, job)
+		}
+	}
+}
+
+func main() {
+	// 使い方: go run ./phase3/3-2-timeout ignore    … 処理がctxを確認しない
+	//         go run ./phase3/3-2-timeout cooperate … 処理がctxを確認して中断する
+	mode := "ignore"
+	if len(os.Args) > 1 {
+		mode = os.Args[1]
+	}
+	cooperate := mode == "cooperate"
+	fmt.Println("mode:", mode)
+
+	// 受付を止める合図（実際のサーバーではSIGTERMを受けたときに相当する）
+	stopCtx, stop := context.WithCancel(context.Background())
+	defer stop()
+	// Workerや仕事にキャンセルを伝えるContext（shutdownCtxとは別に用意する）
+	workCtx, workCancel := context.WithCancel(context.Background())
+	defer workCancel()
+
+	jobs := make(chan int)
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go worker(workCtx, i, jobs, &wg, cooperate)
+	}
+
+	go func() {
+		defer close(jobs)
+		for job := 1; ; job++ {
+			select {
+			case <-stopCtx.Done():
+				fmt.Println("main: 新しい仕事の受付を止めた")
+				return
+			case jobs <- job:
+				fmt.Printf("main: job %d を渡した\n", job)
+			}
+		}
+	}()
+
+	// 動作確認しやすいよう、1秒後に自動でシャットダウンを開始する
+	time.AfterFunc(1*time.Second, stop)
+
+	<-stopCtx.Done()
+	fmt.Println("main: shutdown requested（処理中の仕事の完了を待つ）")
+
+	// 終了期限は2秒。仕事は8秒かかるので、必ずタイムアウトする
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		fmt.Println("main: all workers stopped")
+		return
+	case <-shutdownCtx.Done():
+		fmt.Println("main: shutdown timeout:", shutdownCtx.Err())
+	}
+
+	// タイムアウトしても、Workerは自動では止まらない。workCtxをキャンセルして終了を伝える
+	fmt.Println("main: workCancel() を呼ぶ")
+	workCancel()
+
+	// キャンセル後の様子を3秒だけ見る
+	select {
+	case <-done:
+		fmt.Println("main: all workers stopped")
+	case <-time.After(3 * time.Second):
+		fmt.Println("main: 3秒待ってもworkerが止まらない。mainが終わるとプロセスごと終了する")
+	}
+}
+```
+
+:::
+
+### ctx.Done()だけでは足りない：ctx.Err()で終了理由を区別する
+
+ここまでのコードは、`ctx.Done()` でキャンセルを検知していました。しかし `Done()` が分かるのは「Contextが終了した」ことだけで、次の2点が足りません。
+
+- **なぜ終了したのかが分からない**：`cancel()` が呼ばれたのか、期限が切れたのか
+- **処理関数が返したエラーの原因が分からない**：キャンセルによる中断なのか、Job自体の失敗なのか。区別できないと、キャンセルされただけのJobを「失敗」として扱ってしまう
+
+この2点を補うのが `ctx.Err()` です。Contextが終了した理由を返し、まだ終了していなければ `nil` を返します。
+
+| 状態 | `ctx.Err()` |
+|---|---|
+| Contextが有効 | `nil` |
+| `cancel()` によるキャンセル | `context.Canceled` |
+| `WithTimeout` / `WithDeadline` の期限切れ | `context.DeadlineExceeded` |
+
+例えば `WithTimeout` の場合、`Done()` はどちらも同じように閉じますが、`Err()` の値で期限切れだと分かります。
+
+```go
+ctx, cancel := context.WithTimeout(
+    context.Background(),
+    3*time.Second,
+)
+defer cancel()
+
+<-ctx.Done()
+fmt.Println(ctx.Err()) // context deadline exceeded
+```
+
+処理関数は、キャンセルを検知したら `ctx.Err()` を返します（前の節の `process`）。Worker側では、エラーが返ってきたときに `ctx.Err()` を見ると、キャンセルによる終了と、通常のJobエラーを分けられます。
+
+```go
+if err := process(ctx, job); err != nil {
+    if ctx.Err() != nil {
+        return // キャンセルまたは期限切れによる終了
+    }
+
+    log.Printf("job failed: %v", err)
+    // 通常のJobエラーなら次のJobへ
+}
+```
+
+動かして確認すると、job 2 は通常のエラーとして扱われて次のJobに進み、job 3 は期限切れによる中断として扱われます。
+
+```
+worker: job 1 done
+worker: job 2 failed: 外部APIがエラーを返した
+worker: job 3 を中断: context deadline exceeded
+main: ctx.Err() = context deadline exceeded
+```
+
+:::details ctx.Err()でキャンセルと通常のエラーを分けるコード全体
+
+```go
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"sync"
+	"time"
+)
+
+type Job struct{ ID int }
+
+// process は1件の仕事を小さなステップに分けて進め、ステップごとにキャンセルを確認する
+func process(ctx context.Context, job Job) error {
+	for step := 1; step <= 3; step++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err() // キャンセルまたは期限切れの理由を返す
+		default:
+		}
+
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	// job 2 は、キャンセルとは関係のない通常のエラーで失敗する想定
+	if job.ID == 2 {
+		return errors.New("外部APIがエラーを返した")
+	}
+	return nil
+}
+
+func worker(ctx context.Context, jobs <-chan Job, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("worker: stop requested:", ctx.Err())
+			return
+		case job, ok := <-jobs:
+			if !ok {
+				return
+			}
+			if err := process(ctx, job); err != nil {
+				if ctx.Err() != nil {
+					fmt.Printf("worker: job %d を中断: %v\n", job.ID, ctx.Err())
+					return // キャンセルまたは期限切れによる終了
+				}
+
+				log.Printf("worker: job %d failed: %v", job.ID, err)
+				continue // 通常のJobエラーなら次のJobへ
+			}
+			fmt.Printf("worker: job %d done\n", job.ID)
+		}
+	}
+}
+
+func main() {
+	// 3.5秒で期限切れになるContext（WithCancel + cancel() なら context.Canceled になる）
+	ctx, cancel := context.WithTimeout(context.Background(), 3500*time.Millisecond)
+	defer cancel()
+
+	jobs := make(chan Job)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go worker(ctx, jobs, &wg)
+
+	for id := 1; id <= 3; id++ {
+		select {
+		case jobs <- Job{ID: id}:
+		case <-ctx.Done():
+		}
+	}
+	close(jobs)
+	wg.Wait()
+
+	fmt.Println("main: ctx.Err() =", ctx.Err())
+}
+```
+
+:::
+
+`ctx.Done()` は終了通知を受け取るために、`ctx.Err()` は終了理由を確認するために使います。`Err()` はチャネルではないため、待機には使えません。
 
 ### 処理中の仕事をどう扱うか
 
@@ -730,14 +1123,12 @@ Graceful Shutdownでは、単に `cancel()` を呼べばよいわけではあり
 - まだ開始していない仕事は破棄する
 - 未処理の仕事をキューや永続ストレージに戻す
 - 外部API呼び出しなど、途中でキャンセルできる処理はContextで止める
+- 長時間かかる仕事は、処理状態を保存し、再開・再試行できるようにする
 
-どの方針が適切かは、仕事の性質や再実行可能性によって変わります。
+Contextは強制終了命令ではなく、「終了してほしい」という通知です。どの方針が適切かは、仕事の性質や再実行可能性によって変わります。
 
-### Phase 2のポイント
+### Phase 3のポイント
 
-- Worker Poolで同時実行数を制御する
-- `WaitGroup` でWorkerの終了を待つ
-- channelを閉じて新しい仕事がないことを伝える
 - `context.WithCancel` でキャンセルを伝える
 - `context.WithTimeout` で終了を待つ期限を設ける
 - `signal.NotifyContext` で `SIGTERM` / `SIGINT` を受け取り、Graceful Shutdownを開始する
@@ -746,284 +1137,7 @@ Graceful Shutdownでは、単に `cancel()` を呼べばよいわけではあり
 - 処理中・未処理の仕事をどう扱うか決めておく
 
 **改善の考え方：**
-goroutineの数を制御し、停止時にも仕事を安全に扱えるようにする。
-
-## Phase 3：非同期メッセージ処理とデータ整合性
-
-Phase 2までは、主にアプリケーション内のgoroutineやWorkerの制御を扱いました。実務では、Pub/Subなどのメッセージングサービスから仕事を受け取って非同期処理するケースもあります。
-
-ここでは、メッセージを受信して処理するWorkerを考えます。
-
-### メッセージ処理の基本的な流れ
-
-例えば、注文イベントを受信して後続処理を行う場合、概念的には次の流れになります。
-
-1. メッセージを受信する
-2. メッセージの内容を検証する
-3. 注文に関する処理を実行する
-4. 成功したらACKする
-5. 失敗したらNACKやリトライなど、システムの方針に従って扱う
-
-ACKはメッセージ処理が完了したことをブローカーに伝える操作です。NACKは処理できなかったことを伝え、再配信などにつなげるために使われます。実際の挙動は利用するメッセージングサービスや設定によって異なります。
-
-### ACKを早く返しすぎない
-
-例えば、処理をgoroutineに渡した直後にACKしてしまうと、実際の処理が終わる前にメッセージが完了扱いになる可能性があります。
-
-```go
-func process(m *Message) {
-    fmt.Printf("message %d: start processing\n", m.ID)
-    time.Sleep(3 * time.Second) // 重い処理を想定して3秒待機する
-    fmt.Printf("message %d: processed\n", m.ID)
-}
-
-func handleMessage(m *Message) {
-    go process(m)
-    m.Ack() // 処理完了前にACKしてしまう
-}
-
-func main() {
-    handleMessage(&Message{ID: 1})
-
-    // 処理中にプロセスが停止した状況（デプロイ・障害・クラッシュなど）を想定する
-    time.Sleep(1 * time.Second)
-    fmt.Println("main: プロセスが停止する")
-}
-```
-
-実行結果の例です。
-
-```
-message 1: ACK（ブローカーは完了扱いにする）
-message 1: start processing
-main: プロセスが停止する
-```
-
-`message 1: processed` が表示されていません。1秒後にプロセスが停止し、3秒かかる処理が途中で打ち切られたためです。それでもACK済みなので、メッセージは再配信されず、仕事が失われます。具体的には、注文イベントのACKは済んでいるのに、決済も在庫の更新も行われていない状態になります。
-
-基本的には、処理が成功したことを確認してからACKする設計にします。
-
-```go
-func process(m *Message) error {
-    fmt.Printf("message %d: start processing\n", m.ID)
-    time.Sleep(3 * time.Second) // 重い処理を想定して3秒待機する
-
-    // 動作確認しやすいよう、IDが偶数のメッセージは失敗させる
-    if m.ID%2 == 0 {
-        return errors.New("process failed")
-    }
-    fmt.Printf("message %d: processed\n", m.ID)
-    return nil
-}
-
-func handleMessage(m *Message) {
-    if err := process(m); err != nil {
-        m.Nack()
-        return
-    }
-
-    m.Ack()
-}
-
-func main() {
-    for id := 1; id <= 4; id++ {
-        handleMessage(&Message{ID: id})
-    }
-}
-```
-
-実行結果の例です。
-
-```
-message 1: start processing
-message 1: processed
-message 1: ACK（完了扱い）
-message 2: start processing
-message 2: NACK（再配信される）
-message 3: start processing
-message 3: processed
-message 3: ACK（完了扱い）
-message 4: start processing
-message 4: NACK（再配信される）
-```
-
-成功したメッセージ（1, 3）だけがACKされ、失敗したメッセージ（2, 4）はNACKによって再配信の対象になります。途中でプロセスが停止しても、ACKしていないメッセージは再配信されるため、仕事は失われません。
-
-2つのタイミングの違いを図にすると、次のとおりです。
-
-```mermaid
-sequenceDiagram
-    participant B as ブローカー
-    participant H as handleMessage
-    participant P as process（3秒）
-
-    Note over B,P: 悪い例：処理の前にACK
-    B->>H: message 1
-    H->>P: go process
-    H->>B: ACK（完了扱い）
-    Note over P: 処理中にプロセスが停止
-    Note over B: ACK済みなので再配信されない
-
-    Note over B,P: 良い例：処理の後にACK
-    B->>H: message 1
-    H->>P: process
-    P-->>H: 成功
-    H->>B: ACK
-    B->>H: message 2
-    H->>P: process
-    P-->>H: 失敗
-    H->>B: NACK
-    Note over B: 再配信される
-```
-
-これは概念例です。実際のSDKではACK/NACKのAPIやエラー処理が異なります。
-
-### 再配信による二重処理を考える
-
-メッセージングシステムでは、処理が失敗したりACKが届かなかったりすると、同じメッセージが再配信されることがあります。
-
-そのため、同じ注文イベントを複数回受け取っても、結果が壊れないようにする必要があります。
-
-この考え方を冪等性（idempotency）といいます。
-
-#### 冪等でないと何が起きるか
-
-注文1の処理は成功したのに、ACKがブローカーに届かなかったとします。ブローカーは「処理されていない」と判断して、注文1を再配信します。
-
-冪等でない処理では、届くたびに毎回決済してしまいます。
-
-```go
-// 決済API呼び出しを想定した処理
-func charge(orderID int) {
-    time.Sleep(3 * time.Second) // 重い処理を想定して3秒待機する
-    fmt.Printf("  注文 %d: 決済した\n", orderID)
-}
-
-// 冪等でない例：届くたびに毎回決済する
-func handleNaive(m Message) {
-    fmt.Printf("注文 %d を受信\n", m.OrderID)
-    charge(m.OrderID)
-}
-```
-
-注文1が再配信されると、次のように二重に決済されます。
-
-```
-=== 冪等でない場合 ===
-注文 1 を受信
-  注文 1: 決済した
-注文 2 を受信
-  注文 2: 決済した
-注文 1 を受信
-  注文 1: 決済した    ← 二重に決済してしまった
-```
-
-#### 処理済みかどうかを確認する
-
-処理する前に「この注文IDはすでに処理したか」を確認すれば、再配信されても結果は変わりません。
-
-```go
-// processed は、注文IDの一意制約を持つordersテーブルの代わり
-var processed = map[int]bool{}
-
-// 冪等な例：処理済みの注文IDは何もしない
-func handleIdempotent(m Message) {
-    fmt.Printf("注文 %d を受信\n", m.OrderID)
-    if processed[m.OrderID] {
-        fmt.Printf("  注文 %d: 処理済みなのでスキップ\n", m.OrderID)
-        return
-    }
-    charge(m.OrderID)
-    processed[m.OrderID] = true
-}
-```
-
-同じメッセージが届いても、2回目はスキップされます。
-
-```
-=== 冪等な場合 ===
-注文 1 を受信
-  注文 1: 決済した
-注文 2 を受信
-  注文 2: 決済した
-注文 1 を受信
-  注文 1: 処理済みなのでスキップ    ← 再配信されても二重に決済しない
-```
-
-```mermaid
-sequenceDiagram
-    participant B as ブローカー
-    participant H as handleIdempotent
-    participant S as 処理済みの記録
-
-    B->>H: 注文1
-    H->>S: 注文1は処理済み？
-    S-->>H: いいえ
-    H->>H: 決済する
-    H->>S: 注文1を記録
-    Note over B,H: ACKが届かず、再配信される
-    B->>H: 注文1（再配信）
-    H->>S: 注文1は処理済み？
-    S-->>H: はい
-    Note over H: 何もせず終了
-```
-
-ここでは、処理済みの記録をメモリ上のmapで代用しています。実務では、注文IDに一意制約を設定したDBのテーブルに記録します。同じ注文を重複登録できないようにする方法です。
-
-```sql
-CREATE TABLE orders (
-    id BIGINT PRIMARY KEY,
-    amount INTEGER NOT NULL
-);
-```
-
-ただし、単に一意制約を設けるだけで、あらゆる副作用が安全になるわけではありません。重複時の扱い、更新処理、外部API呼び出しなども含めて設計する必要があります。
-
-### DBトランザクションと整合性
-
-例えば、注文を登録した後に決済サービスを呼び出す場合、DBへの保存と外部サービスへのリクエストは、通常ひとつのDBトランザクションとしてまとめられません。
-
-そのため、次のような問題が起き得ます。
-
-- DB登録は成功したが、外部API呼び出しに失敗した
-- 外部APIは成功したが、応答を受け取る前にタイムアウトした
-- リトライによって同じ処理が複数回実行された
-
-2つ目の「外部APIは成功したが、応答を受け取る前にタイムアウトした」ケースを図にすると、次のようになります。
-
-```mermaid
-sequenceDiagram
-    participant H as Worker
-    participant D as DB
-    participant P as 決済API
-
-    H->>D: 注文を保存
-    D-->>H: 成功
-    H->>P: 決済をリクエスト
-    Note over P: 決済は成功した
-    P--xH: 応答が届かずタイムアウト
-    Note over H: 決済されたかどうか不明
-    H->>H: NACK → メッセージが再配信される
-    H->>D: 注文を保存（再配信）
-    Note over D: 一意制約で重複を防げる
-    H->>P: 決済をリクエスト（再配信）
-    Note over P: 冪等性キーがなければ二重決済になる
-```
-
-DBの一意制約で守れるのは、DBへの二重登録までです。外部APIへのリクエストが二重に実行されるかどうかは、別の仕組みで守る必要があります。たとえば決済APIに「同じ冪等性キーなら一度しか処理しない」ことを任せる方法があります。
-
-こうしたケースでは、冪等性キー、処理状態の管理、トランザクション、Outboxパターンなどを組み合わせて検討します。どの方式を使うかは、求める整合性やシステム構成によって変わります。
-
-### Phase 3のポイント
-
-- 非同期メッセージ処理では、処理完了とACKの順序が重要
-- 失敗時のNACKやリトライの挙動を理解する
-- メッセージの再配信による二重処理を想定する
-- 冪等性を確保し、重複実行でも安全にする
-- DBと外部サービスをまたぐ処理では、部分的な失敗を考慮する
-
-**改善の考え方：**
-goroutineやWorkerの制御だけでなく、メッセージの再配信、二重実行、障害時のデータ整合性まで設計する。
+停止時にも仕事を安全に扱えるようにする。
 
 ## 3段階のまとめ
 
@@ -1033,38 +1147,18 @@ goroutineやWorkerの制御だけでなく、メッセージの再配信、二�
 |         | 起動したあとのworkerに、仕事を渡せない                   | channelで仕事を受け渡す                        |
 |         | 動き続けるworkerを、外から止められない                   | contextでキャンセルを伝える                    |
 | Phase 2 | 仕事の数だけgoroutineが増え、API・DB・メモリが限界になる | Worker Poolで同時実行数を制限する              |
-|         | 停止時に、処理中の仕事が中断される                       | Graceful Shutdownとタイムアウト                |
-| Phase 3 | 処理が終わる前にACKして、仕事が失われる                  | 処理が成功してからACKし、失敗したらNACKする    |
-|         | 再配信されて、同じ処理（決済など）が二重に実行される     | 冪等性（処理済みかどうかの確認、一意制約）     |
-|         | DBと外部APIをまたぐ処理で、一部だけ成功した状態になる    | 冪等性キー、処理状態の管理、Outboxパターンなど |
-
-この記事のサンプルコードは、次の順に対応しています。
-
-| フォルダ                       | 内容                                            |
-| ------------------------------ | ----------------------------------------------- |
-| `phase1/1-1-goroutine`         | goroutineを起動するだけだと、処理が途中で終わる |
-| `phase1/1-2-waitgroup`         | WaitGroupで終了を待つ                           |
-| `phase1/1-3-channel`           | channelで仕事を渡す                             |
-| `phase1/1-4-context`           | contextでキャンセルを伝える                     |
-| `phase2/2-1-workerpool`        | Worker Poolで同時実行数を制限する               |
-| `phase2/2-2-shutdown`          | Graceful Shutdown                               |
-| `phase3/3-1-early-ack`         | 処理の前にACKして、仕事が失われる               |
-| `phase3/3-2-ack-after-process` | 処理の後にACKし、失敗したらNACKする             |
-| `phase3/3-3-idempotency`       | 冪等性で、再配信されても二重に処理しない        |
+| Phase 3 | 停止時に、処理中の仕事が中断される                       | Graceful Shutdownとタイムアウト                |
 
 goroutineを使ううえで大切なのは、単に並行して処理を実行することではありません。
 
 - いくつ同時に動かすのか
 - いつ、どのように止めるのか
 - 処理中の仕事をどう扱うのか
-- 失敗した仕事をどう再実行するのか
-- 同じ仕事が複数回実行されても安全か
 
-こうした点を順番に考えることで、実務で扱える並行処理に近づけます。
+`go` を付けるだけで並行処理は始められますが、動かし続けて、止めるところまで考えると、WaitGroup、channel、context、Worker Pool、Graceful Shutdownといった仕組みが必要になります。
 
 ## 補足：この記事で扱った範囲
 
-この記事は、goroutine学習で扱ったテーマを3段階に整理したものです。コード例は考え方を示すための簡略化したものを含み、実際の本番実装ではエラー処理、Contextの伝播、ログ、メトリクス、リソース制限、リトライ方針などを追加で設計する必要があります。
+この記事のコード例は、考え方を示すために簡略化しています。実際に使う場合は、エラー処理、Contextの伝播、ログ、メトリクス、リソース制限、リトライ方針などを追加で設計する必要があります。
 
-また、race condition、deadlock、goroutine
-leakの検出・防止や、テスト・ベンチマークについては、別途理解を深めていく必要があります。
+また、race condition、deadlock、goroutine leakの検出・防止や、テスト・ベンチマークは、この記事では扱っていません。

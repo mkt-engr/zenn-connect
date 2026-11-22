@@ -99,7 +99,7 @@
 
 <script>
 // ---- シミュレーション本体（描画に依存しない） ----
-// Go の phase2/2-2-shutdown/main.go と同じ動き:
+// Go の phase3/3-1-shutdown/main.go と同じ動き:
 //  - jobs はバッファなし。main は空いている worker がいるときだけ job を渡せる
 //  - SIGTERM を受けると、新しい仕事の受付を止める。worker は処理中の job を最後まで完了してから止まる
 //  - 終了期限までに全 worker が止まらなければ、タイムアウトとして終了する
