@@ -1,5 +1,5 @@
 ---
-title: "Goのgoroutine（ゴルーチン）で非同期処理を安全に終了する方法"
+title: "goroutine（ゴルーチン）はgoを付けただけでは終わらない"
 emoji: "🐹"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [Go, goroutine, 並行処理]
