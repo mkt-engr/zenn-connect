@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Worker Pool とバッファの可視化</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1f2933; --muted: #6b7785; --line: #d5dbe3;
+    --card: #f5f7fa; --main: #3b82f6; --buf: #f59e0b; --work: #10b981; --block: #ef4444;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14181d; --fg: #e6eaef; --muted: #98a2b0; --line: #2d3540; --card: #1d232b; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0 auto; padding: 8px; max-width: 720px; background: var(--bg); color: var(--fg);
+         font: 14px/1.5 -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; }
+  h1 { font-size: 14px; margin: 0 0 6px; text-align: center; }
+  .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; align-items: center; margin-bottom: 8px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  .controls input[type=range] { width: 110px; }
+  .controls output { display: inline-block; min-width: 2ch; font-weight: 700; }
+  button { border: 1px solid var(--line); background: var(--card); color: var(--fg);
+           padding: 3px 12px; border-radius: 6px; cursor: pointer; font: inherit; }
+  button:hover { border-color: var(--muted); }
+  .stage { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stage .wide { grid-column: 1 / -1; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+  .panel { text-align: center; }
+  .panel h2 { font-size: 12px; margin: 0 0 4px; color: var(--muted); font-weight: 600; }
+  .status { margin-top: 2px; font-size: 12px; font-weight: 700; }
+  .status.blocked { color: var(--block); }
+  .status.ok { color: var(--work); }
+  .job { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px;
+         border-radius: 6px; color: #fff; font-weight: 700; font-size: 13px; }
+  .job.main { background: var(--main); }
+  .job.buf { background: var(--buf); }
+  .job.work { background: var(--work); }
+  .slots { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; min-height: 32px; }
+  .slot { width: 32px; height: 32px; border: 2px dashed var(--line); border-radius: 6px;
+          display: flex; align-items: center; justify-content: center; }
+  .slot.filled { border-style: solid; border-color: var(--buf); }
+  .nobuf { color: var(--muted); font-size: 12px; }
+  #workers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .worker { min-width: 0; }
+  .worker .row { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; font-size: 12px; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--work); }
+  .idle { color: var(--muted); }
+  .log { margin-top: 8px; max-height: 84px; overflow-y: auto; font: 12px/1.6 ui-monospace, Menlo, monospace; }
+  .log { text-align: left; }
+  .log div.main { color: var(--main); }
+  .log div.worker { color: var(--work); }
+  .log div.end { font-weight: 700; }
+  .sent { margin-top: 0; font-size: 12px; color: var(--muted); }
+  /* スマホ向け */
+  @media (max-width: 480px) {
+    body { padding: 8px; font-size: 13px; }
+    h1 { font-size: 14px; }
+    .controls { gap: 8px 12px; }
+    .controls input[type=range] { width: 90px; }
+    button { padding: 8px 18px; }
+    .stage { grid-template-columns: 1fr; }
+    .worker .row { flex-wrap: wrap; justify-content: center; gap: 4px; }
+    .slot { width: 30px; height: 30px; }
+    .slot .job { min-width: 24px; height: 24px; font-size: 12px; }
+    .log { max-height: 72px; font-size: 11px; }
+  }
+  input[type=range] { touch-action: manipulation; }
+</style>
+</head>
+<body>
+<h1 id="title"></h1>
+
+<div class="controls">
+  <label>バッファ: <input id="cap" type="range" min="0" max="10" value="0"><output id="capOut">0</output></label>
+  <label>worker: <input id="wc" type="range" min="1" max="6" value="3"><output id="wcOut">3</output></label>
+  <label>job: <input id="jc" type="range" min="1" max="20" value="10"><output id="jcOut">10</output></label>
+  <label>速度: <input id="speed" type="range" min="1" max="10" value="5"><output id="speedOut">5</output></label>
+  <button id="play">▶ スタート</button>
+  <button id="reset">最初から</button>
+</div>
+
+<div class="stage">
+  <div class="panel">
+    <h2>main（送信側）</h2>
+    <div id="mainBox"></div>
+    <div id="mainStatus" class="status"></div>
+    <div id="sent" class="sent"></div>
+  </div>
+  <div class="panel">
+    <h2>jobs チャネルのバッファ</h2>
+    <div id="slots" class="slots"></div>
+  </div>
+  <div class="panel wide">
+    <h2>worker</h2>
+    <div id="workers"></div>
+  </div>
+</div>
+
+<div class="panel log" id="log"></div>
+
+<script>
+// ---- シミュレーション本体（描画に依存しない） ----
+function createSim(cap, workerCount, jobCount, duration) {
+  const sim = {
+    cap, jobCount, duration, time: 0,
+    nextJob: 1,          // main が次に送る job
+    announced: false,    // 「job N を送る」を出力済みか
+    closed: false,
+    buffer: [],
+    workers: Array.from({ length: workerCount }, () => ({ job: null, remaining: 0 })),
+    logs: [],
+    finished: false,
+  };
+  const log = (kind, text) => sim.logs.push({ kind, text, t: sim.time });
+
+  function settle() {
+    let progressed = true;
+    while (progressed) {
+      progressed = false;
+      // 空いている worker はバッファから受け取る
+      sim.workers.forEach((w, i) => {
+        if (w.job === null && sim.buffer.length > 0) {
+          start(i, sim.buffer.shift());
+          progressed = true;
+        }
+      });
+      // main の送信
+      if (sim.nextJob <= sim.jobCount) {
+        if (!sim.announced) { log("main", `main: job ${sim.nextJob} を送る`); sim.announced = true; }
+        const idle = sim.workers.findIndex(w => w.job === null);
+        if (idle >= 0) { start(idle, sim.nextJob); sent(); progressed = true; }
+        else if (sim.buffer.length < sim.cap) { sim.buffer.push(sim.nextJob); sent(); progressed = true; }
+      } else if (!sim.closed) {
+        sim.closed = true;
+        log("main", "main: workerの完了を待つ");
+        progressed = true;
+      }
+    }
+  }
+  function sent() {
+    log("main", `main: job ${sim.nextJob} を送り終えた`);
+    sim.nextJob++; sim.announced = false;
+  }
+  function start(i, job) {
+    sim.workers[i] = { job, remaining: sim.duration };
+    log("worker", `worker ${i}: start 画像 ${job} を変換`);
+  }
+
+  sim.step = function (dt) {
+    if (sim.finished) return;
+    sim.time += dt;
+    sim.workers.forEach((w, i) => {
+      if (w.job === null) return;
+      w.remaining -= dt;
+      if (w.remaining <= 0) {
+        log("worker", `worker ${i}: done image_${w.job}_thumb.jpg を作成`);
+        sim.workers[i] = { job: null, remaining: 0 };
+      }
+    });
+    settle();
+    if (sim.closed && sim.buffer.length === 0 && sim.workers.every(w => w.job === null)) {
+      sim.finished = true;
+      log("end", `main: 完了（${sim.time.toFixed(1)}秒）`);
+    }
+  };
+  settle();
+  return sim;
+}
+
+// ---- 描画 ----
+if (typeof document !== "undefined") {
+  const $ = id => document.getElementById(id);
+  const DURATION = 3;
+  let WORKERS = 3, JOBS = 10;
+  let sim, playing = true, last = null, logCount = 0;
+
+  function reset(autoStart = true) {
+    WORKERS = +$("wc").value; JOBS = +$("jc").value;
+    $("title").textContent = `バッファを変えて試す（worker ${WORKERS}つ・job ${JOBS}件・1件${DURATION}秒）`;
+    $("workers").style.gridTemplateColumns = `repeat(${Math.min(WORKERS, 3)}, 1fr)`;
+    sim = createSim(+$("cap").value, WORKERS, JOBS, DURATION);
+    logCount = 0; $("log").innerHTML = "";
+    playing = autoStart; $("play").textContent = autoStart ? "一時停止" : "▶ スタート"; last = null;
+    render();
+  }
+
+  function render() {
+    const blocked = sim.nextJob <= JOBS && sim.announced;
+    $("mainBox").innerHTML = sim.nextJob <= JOBS
+      ? `<span class="job main">${sim.nextJob}</span>`
+      : `<span class="idle">送信済み</span>`;
+    $("mainStatus").className = "status " + (blocked ? "blocked" : "ok");
+    $("mainStatus").textContent = sim.nextJob > JOBS ? "close(jobs) 済み"
+      : blocked ? `job ${sim.nextJob} の送信待ち（ブロック中）` : "送信中";
+    $("sent").textContent = `送信済み: ${Math.min(sim.nextJob - 1, JOBS)} / ${JOBS}`;
+
+    $("slots").innerHTML = sim.cap === 0
+      ? `<span class="nobuf">バッファなし（受け取る worker がいるときだけ渡せる）</span>`
+      : Array.from({ length: sim.cap }, (_, i) => sim.buffer[i] !== undefined
+          ? `<div class="slot filled"><span class="job buf">${sim.buffer[i]}</span></div>`
+          : `<div class="slot"></div>`).join("");
+
+    $("workers").innerHTML = sim.workers.map((w, i) => w.job === null
+      ? `<div class="worker"><div class="row"><b>worker ${i}</b><span class="idle">待機中</span></div><div class="bar"></div></div>`
+      : `<div class="worker"><div class="row"><b>worker ${i}</b><span class="job work" style="min-width:24px;height:22px">${w.job}</span></div>
+         <div class="bar"><div style="width:${((DURATION - w.remaining) / DURATION * 100).toFixed(1)}%"></div></div></div>`
+    ).join("");
+
+    const box = $("log");
+    for (; logCount < sim.logs.length; logCount++) {
+      const l = sim.logs[logCount], d = document.createElement("div");
+      d.className = l.kind; d.textContent = `[${l.t.toFixed(1)}s] ${l.text}`;
+      box.appendChild(d);
+    }
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function frame(now) {
+    if (last !== null && playing) {
+      const dt = Math.min((now - last) / 1000, 0.1) * +$("speed").value * 0.6; // 5 が従来の3倍速（体感はそのまま）
+      sim.step(dt); render();
+      if (sim.finished) { playing = false; $("play").textContent = "もう一度"; }
+    }
+    last = now;
+    requestAnimationFrame(frame);
+  }
+
+  $("cap").addEventListener("input", () => { $("capOut").textContent = $("cap").value; reset(); });
+  ["wc", "jc"].forEach(id => $(id).addEventListener("input", () => { $(id + "Out").textContent = $(id).value; reset(); }));
+  $("speed").addEventListener("input", () => { $("speedOut").textContent = $("speed").value; });
+  $("play").addEventListener("click", () => {
+    if (sim.finished) { reset(true); return; }
+    playing = !playing; $("play").textContent = playing ? "一時停止" : "再開";
+  });
+  $("reset").addEventListener("click", () => reset(false));
+  reset(false);
+  requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
