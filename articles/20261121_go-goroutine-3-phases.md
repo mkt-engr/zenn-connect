@@ -55,16 +55,19 @@ goroutineは軽量なので、数百〜数千個を同時に起動すること�
 - キューから届いた仕事を、裏のWorkerで順番に処理する（Phase 2で扱う内容）
 - 処理にタイムアウトやキャンセルを設け、途中で止められるようにする（Phase 1のcontextで扱う内容）
 
-### 使用するライブラリ
+### 主に利用したライブラリとそのバージョン
 
-この記事のコードは、Goの標準ライブラリのみを使っています。
+主に利用したライブラリとそのバージョンはこちらです。この記事のコードは、Goの標準ライブラリのみを使っています。
 
-| ライブラリ                | バージョン |
-| ------------------------- | ---------- |
-| Go                        | 1.27.4     |
-| sync（標準ライブラリ）    | Goに同梱   |
-| context（標準ライブラリ） | Goに同梱   |
-| time（標準ライブラリ）    | Goに同梱   |
+| ライブラリ                  | バージョン |
+| --------------------------- | ---------- |
+| Go                          | 1.27.4     |
+| sync（標準ライブラリ）      | Goに同梱   |
+| context（標準ライブラリ）   | Goに同梱   |
+| time（標準ライブラリ）      | Goに同梱   |
+| os/signal（標準ライブラリ） | Goに同梱   |
+
+実装のコードは[こちら](https://github.com/mkt-engr/zenn-connect/tree/main/playground/go-goroutine)のリポジトリで確認できます。
 
 ## Phase 1：goroutineを起動するだけでは不十分
 
@@ -96,7 +99,11 @@ main: 終了する
 
 `done job` は表示されません。`start job` も、表示されるかどうかは実行のたびに変わります。`main` が先に終わってプログラムが終了し、workerが途中で打ち切られるためです。
 
-この記事のコードでは、重い処理を想定して `time.Sleep(3 * time.Second)` で3秒待機しています。実際にAPI呼び出しやDB保存などを行うわけではなく、「1つのジョブに3秒かかる」場合の動きを確認するための待機です。本来は、ここに外部APIの呼び出しやDBへの保存、画像変換といった処理が入ります。
+この記事のコードでは、重い処理を想定して `time.Sleep(3 * time.Second)` で3秒待機しています。実際にAPI呼び出しやDB保存などを行うわけではなく、「1つのジョブに3秒かかる」場合の動きを確認するための待機です。
+
+:::message
+本来は、ここに外部APIの呼び出しやDBへの保存、画像変換といった処理が入ります。
+:::
 
 ただし、このコードには問題があります。`main` 関数が終了するとプログラム自体が終了するため、起動したgoroutineの処理が完了する保証はありません。
 
@@ -208,7 +215,9 @@ done job
 main: 完了
 ```
 
+:::message
 `main: ジョブをworkerに任せた` と `start job` の順番は、実行のたびに入れ替わることがあります。
+:::
 
 ### channelで仕事を受け渡す
 
@@ -349,7 +358,11 @@ func worker(ctx context.Context, id int, jobs <-chan int) {
 }
 ```
 
-`select` で、キャンセル通知（`ctx.Done()`）と仕事の受信（`jobs`）を同時に待ちます。`default` を置いて何もせずループすると、CPUを消費し続けてしまうため注意が必要です。
+`select` で、キャンセル通知（`ctx.Done()`）と仕事の受信（`jobs`）を同時に待ちます。
+
+:::message alert
+`default` を置いて何もせずループすると、CPUを消費し続けてしまいます。
+:::
 
 呼び出し側は `context.WithCancel` でキャンセル可能なContextを作り、`cancel()` で終了を通知できます。
 
@@ -598,7 +611,10 @@ time.AfterFunc(2*time.Second, stop)
 注意点は次のとおりです。
 
 - shutdown contextの元は、キャンセル済みのsignal contextではなく `context.Background()` にします。signal contextから作ると、作った時点で期限切れになってしまいます。
-- 期限を過ぎても終わらない場合、プロセスは最終的に `SIGKILL` で強制終了されることがあります。`SIGKILL` はプログラム側で受け取れないので、期限内に終わらなかった仕事は、中断される前提で設計しておく必要があります。
+
+:::message alert
+期限を過ぎても終わらない場合、プロセスは最終的に `SIGKILL` で強制終了されることがあります。`SIGKILL` はプログラム側で受け取れないので、期限内に終わらなかった仕事は、中断される前提で設計しておく必要があります。
+:::
 
 ### context.WithTimeoutで終了期限を設ける
 
@@ -1162,3 +1178,11 @@ goroutineを使ううえで大切なのは、単に並行して処理を実行�
 この記事のコード例は、考え方を示すために簡略化しています。実際に使う場合は、エラー処理、Contextの伝播、ログ、メトリクス、リソース制限、リトライ方針などを追加で設計する必要があります。
 
 また、race condition、deadlock、goroutine leakの検出・防止や、テスト・ベンチマークは、この記事では扱っていません。
+
+## 参考
+
+- [sync package - sync - Go Packages](https://pkg.go.dev/sync)
+- [context package - context - Go Packages](https://pkg.go.dev/context)
+- [signal package - os/signal - Go Packages](https://pkg.go.dev/os/signal)
+- [Go Concurrency Patterns: Context - The Go Blog](https://go.dev/blog/context)
+- [Go Concurrency Patterns: Pipelines and cancellation - The Go Blog](https://go.dev/blog/pipelines)
