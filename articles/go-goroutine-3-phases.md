@@ -8,7 +8,7 @@ published: true
 
 ## はじめに
 
-Go言語といえば並列処理が得意というイメージをする人が多いかもしれません。
+Go言語といえば並行処理が得意というイメージをする人が多いかもしれません。
 
 Goのgoroutineは、少ない記述で並行処理を始められる便利な仕組みです。一方で、`go` を付けて関数を起動するだけでは、終了の待機や同時実行数の制御、停止時の扱いは含まれません。
 
@@ -610,7 +610,7 @@ time.AfterFunc(2*time.Second, stop)
 
 注意点は次のとおりです。
 
-- shutdown contextの元は、キャンセル済みのsignal contextではなく `context.Background()` にします。signal contextから作ると、作った時点で期限切れになってしまいます。
+- shutdown contextの元は、キャンセル済みのsignal contextではなく `context.Background()` にします。signal contextから作ると、作った時点でキャンセル済みになってしまい、終了処理に使える時間がなくなります。
 
 :::message alert
 期限を過ぎても終わらない場合、プロセスは最終的に `SIGKILL` で強制終了されることがあります。`SIGKILL` はプログラム側で受け取れないので、期限内に終わらなかった仕事は、中断される前提で設計しておく必要があります。
