@@ -657,6 +657,10 @@ main: all workers stopped
 
 シャットダウンを要求しても、すでに始まっていたjob 1〜3は途中で止まらず、完了してからWorkerが停止します。新しいjob 4は受け付けられていません。
 
+下のデモで、「SIGTERM / Ctrl+C を送る」ボタンを押して、シャットダウンの流れを試せます。1件の処理時間を終了期限より長くすると、タイムアウトになる様子も確認できます。
+
+@[codepen](https://codepen.io/mkt-engr/pen/jEmwRjq?default-tab=result)
+
 上のコードで「省略」とした部分を含む、`main` 関数の全体は次のとおりです。
 
 :::details シグナルを受け取り、Workerの終了を期限付きで待つmain関数の全体
