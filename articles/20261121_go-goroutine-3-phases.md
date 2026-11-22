@@ -361,7 +361,7 @@ func worker(ctx context.Context, id int, jobs <-chan int) {
 `select` で、キャンセル通知（`ctx.Done()`）と仕事の受信（`jobs`）を同時に待ちます。
 
 :::message alert
-`default` を置いて何もせずループすると、CPUを消費し続けてしまいます。
+`default` を置くと、どの `case` も準備できていないときは、待たずにすぐ `default` に進みます。何もせずループすると、仕事が届くまでの間も `select` を待ち時間なしで繰り返し、CPUを消費し続けてしまいます。
 :::
 
 呼び出し側は `context.WithCancel` でキャンセル可能なContextを作り、`cancel()` で終了を通知できます。
