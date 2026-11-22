@@ -65,7 +65,7 @@ func main() {
 	// 動作確認しやすいよう、2秒後に自動でシャットダウンを開始する
 	time.AfterFunc(2*time.Second, stop)
 
-	<-ctx.Done()
+	<-ctx.Done() // シグナルを受け取る、または stop() が実行されるまで待機
 	fmt.Println("main: shutdown requested（処理中の仕事の完了を待つ）")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

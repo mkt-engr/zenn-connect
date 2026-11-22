@@ -356,8 +356,7 @@ func worker(ctx context.Context, id int, jobs <-chan int) {
 
 `select` で、キャンセル通知（`ctx.Done()`）と仕事の受信（`jobs`）を同時に待ちます。`default` を置いて何もせずループすると、CPUを消費し続けてしまうため注意が必要です。
 
-呼び出し側は `context.WithCancel`
-でキャンセル可能なContextを作り、`cancel()` で終了を通知できます。
+呼び出し側は `context.WithCancel`でキャンセル可能なContextを作り、`cancel()` で終了を通知できます。
 
 ```go
 func main() {
@@ -538,8 +537,7 @@ main: 完了                 ← 全体で約12秒
 
 デプロイや再起動のたびに、このような中断が起こり得ます。
 
-Graceful
-Shutdownは、新しい仕事の受付を止め、処理中の仕事を可能な範囲で完了させてから終了する考え方です。
+Graceful Shutdownは、新しい仕事の受付を止め、処理中の仕事を可能な範囲で完了させてから終了する考え方です。
 
 基本的な流れは次のとおりです。
 
@@ -548,6 +546,53 @@ Shutdownは、新しい仕事の受付を止め、処理中の仕事を可能な
 3. Workerに終了を伝える
 4. 処理中の仕事が終わるのを待つ
 5. 制限時間を超えた場合はタイムアウトとして扱う
+
+### SIGTERM / SIGINTを受け取ってGraceful Shutdownを開始する
+
+実際のサーバーでは、アプリケーション内部から停止関数を直接呼ぶのではなく、OSなどから終了シグナルを受け取ってシャットダウンを開始することがあります。
+
+- `SIGTERM`：OSなどから送られる終了要求。アプリケーションが後片付けを行って終了するためのシグナル
+- `SIGINT`：ターミナルで `Ctrl+C` を押したときなどに送られる割り込みシグナル
+
+Goでは `os/signal` の `signal.NotifyContext` を使うと、シグナルをContextのキャンセル通知として扱えます。
+
+```go
+func main() {
+    ctx, stop := signal.NotifyContext(
+        context.Background(),
+        os.Interrupt,
+        syscall.SIGTERM,
+    )
+    defer stop()
+
+    // ...（Workerの起動と仕事の受付は省略）
+
+    // ctx.Done() が通知されたらGraceful Shutdownを開始する
+    <-ctx.Done() // シグナルを受け取る、または stop() が実行されるまで待機
+}
+```
+
+この例では、`SIGINT` または `SIGTERM` を受け取ると `ctx.Done()` が閉じられます。サーバーでは、この通知をきっかけに新しいリクエストやJobの受付を止め、処理中の仕事の終了を待ちます。
+
+シグナルが届かない間は、`<-ctx.Done()` でずっと待ち続けます。手元で動かして確認するときは、`Ctrl+C` を押すか、次のように一定時間後に自動で `stop()` を呼ぶと、シグナルを受け取ったときと同じ流れを試せます。
+
+```go
+// 動作確認用：2秒後に自動でシャットダウンを開始する
+time.AfterFunc(2*time.Second, stop)
+```
+
+シグナルを受け取るContextと、終了処理に使うContextは役割を分けると整理しやすくなります。
+
+- **signal context**：OSから停止要求が来たことを検知する
+- **shutdown context**：終了処理に許す時間を `context.WithTimeout` で制限する
+- **work context**：Workerや個々の処理にキャンセルを伝える。処理を中断するか、完了まで待つかはJobの性質に応じて決める
+
+シグナルを受け取った後に、`context.WithTimeout(context.Background(), 10*time.Second)` で終了期限を作り、その時間内に受付停止とWorkerの終了を待ちます。
+
+注意点は次のとおりです。
+
+- shutdown contextの元は、キャンセル済みのsignal contextではなく `context.Background()` にします。signal contextから作ると、作った時点で期限切れになってしまいます。
+- 期限を過ぎても終わらない場合、プロセスは最終的に `SIGKILL` で強制終了されることがあります。`SIGKILL` はプログラム側で受け取れないので、期限内に終わらなかった仕事は、中断される前提で設計しておく必要があります。
 
 ### context.WithTimeoutで終了期限を設ける
 
@@ -565,8 +610,7 @@ func main() {
 }
 ```
 
-例えば、Workerの終了を待つ処理を別goroutineで実行し、終了通知とタイムアウトを
-`select` で待つことができます。
+例えば、Workerの終了を待つ処理を別goroutineで実行し、終了通知とタイムアウトを`select` で待つことができます。
 
 ```go
 func main() {
@@ -610,6 +654,63 @@ main: all workers stopped
 
 シャットダウンを要求しても、すでに始まっていたjob 1〜3は途中で止まらず、完了してからWorkerが停止します。新しいjob 4は受け付けられていません。
 
+上のコードで「省略」とした部分を含む、`main` 関数の全体は次のとおりです。
+
+:::details シグナルを受け取り、Workerの終了を期限付きで待つmain関数の全体
+
+```go
+func main() {
+	// Ctrl+C (SIGINT) / SIGTERM でキャンセルされるContext
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	jobs := make(chan int)
+	var wg sync.WaitGroup
+	for i := 0; i < 3; i++ {
+		wg.Add(1)
+		go worker(ctx, i, jobs, &wg)
+	}
+
+	// 仕事を送る側もContextを見る（新しい仕事の受付を止める）
+	go func() {
+		defer close(jobs)
+		for job := 1; ; job++ {
+			select {
+			case <-ctx.Done():
+				fmt.Println("main: 新しい仕事の受付を止めた")
+				return
+			case jobs <- job:
+				fmt.Printf("main: job %d を渡した\n", job)
+			}
+		}
+	}()
+
+	// 動作確認しやすいよう、2秒後に自動でシャットダウンを開始する
+	time.AfterFunc(2*time.Second, stop)
+
+	<-ctx.Done() // シグナルを受け取る、または stop() が実行されるまで待機
+	fmt.Println("main: shutdown requested（処理中の仕事の完了を待つ）")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		fmt.Println("main: all workers stopped")
+	case <-shutdownCtx.Done():
+		fmt.Println("main: shutdown timeout:", shutdownCtx.Err())
+	}
+}
+```
+
+:::
+
 ここで注意したいのは、タイムアウトしたからといって、処理中のgoroutineが自動的に強制終了されるわけではないことです。各Workerや処理関数がContextを確認し、キャンセルに協力する設計が必要です。
 
 ### 処理中の仕事をどう扱うか
@@ -632,6 +733,8 @@ Graceful Shutdownでは、単に `cancel()` を呼べばよいわけではあり
 - channelを閉じて新しい仕事がないことを伝える
 - `context.WithCancel` でキャンセルを伝える
 - `context.WithTimeout` で終了を待つ期限を設ける
+- `signal.NotifyContext` で `SIGTERM` / `SIGINT` を受け取り、Graceful Shutdownを開始する
+- シグナル検知用ContextとShutdown用Context、Worker用Contextの役割を分ける
 - タイムアウトはgoroutineを強制終了する機能ではない
 - 処理中・未処理の仕事をどう扱うか決めておく
 
@@ -640,8 +743,7 @@ goroutineの数を制御し、停止時にも仕事を安全に扱えるよう�
 
 ## Phase 3：非同期メッセージ処理とデータ整合性
 
-Phase
-2までは、主にアプリケーション内のgoroutineやWorkerの制御を扱いました。実務では、Pub/Subなどのメッセージングサービスから仕事を受け取って非同期処理するケースもあります。
+Phase 2までは、主にアプリケーション内のgoroutineやWorkerの制御を扱いました。実務では、Pub/Subなどのメッセージングサービスから仕事を受け取って非同期処理するケースもあります。
 
 ここでは、メッセージを受信して処理するWorkerを考えます。
 
