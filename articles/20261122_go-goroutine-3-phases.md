@@ -3,7 +3,7 @@ title: "goroutine（ゴルーチン）はgoを付けただけでは終わらな�
 emoji: "🐹"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [Go, goroutine, 並行処理]
-published: false
+published: true
 ---
 
 ## はじめに
